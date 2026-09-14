@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Codesi.Factura.ApiFactura/Codesi.Factura.ApiFactura.csproj" Id="a4526c46-be4b-498b-865a-c25f64df4b78" />
+  <Project Path="Codesi.Factura.DemoConsola/Codesi.Factura.DemoConsola.csproj" />
+  <Project Path="Codesi.Factura.Persistencia/Codesi.Factura.Persistencia.csproj" Id="41121888-4afa-44fb-b252-a96e7f31eccf" />
+</Solution>
