@@ -1,0 +1,1360 @@
+﻿@page "/clientes"
+@rendermode InteractiveServer
+
+@using Codesi.Factura.Aplicacion.Models
+@using Codesi.Factura.Aplicacion.Services
+
+@inject ClienteApiService ClienteApiService
+
+<PageTitle>Clientes</PageTitle>
+
+<div class="clientes-page">
+
+    <!-- ENCABEZADO -->
+    <div class="page-header">
+
+        <div class="page-title">
+
+            <div class="title-icon">
+                👥
+            </div>
+
+            <div>
+                <h1>Clientes</h1>
+                <p>Administra la información de tus clientes</p>
+            </div>
+
+        </div>
+
+        <button class="btn btn-new-client"
+                @onclick="NuevoCliente">
+
+            <span>＋</span>
+
+            <span>Nuevo cliente</span>
+
+        </button>
+
+    </div>
+
+
+    <!-- ESTADÍSTICAS -->
+    <div class="row g-3 mb-4">
+
+        <!-- TOTAL CLIENTES -->
+        <div class="col-md-4">
+
+            <div class="stat-card">
+
+                <div class="stat-icon clients-icon">
+                    👥
+                </div>
+
+                <div class="stat-info">
+
+                    <span>Total clientes</span>
+
+                    <strong>@todosLosClientes.Count</strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RESULTADOS -->
+        <div class="col-md-4">
+
+            <div class="stat-card">
+
+                <div class="stat-icon result-icon">
+                    🔎
+                </div>
+
+                <div class="stat-info">
+
+                    <span>Resultados</span>
+
+                    <strong>@clientes.Count</strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- CORREOS -->
+        <div class="col-md-4">
+
+            <div class="stat-card">
+
+                <div class="stat-icon email-icon">
+                    ✉
+                </div>
+
+                <div class="stat-info">
+
+                    <span>Con correo registrado</span>
+
+                    <strong>
+                        @todosLosClientes.Count(x =>
+                            !string.IsNullOrWhiteSpace(x.email))
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BUSCADOR -->
+    <div class="search-card">
+
+        <div class="search-title">
+
+            <div>
+                <h5>Buscar clientes</h5>
+
+                <span>
+                    Busca por identificación, nombre, teléfono o correo
+                </span>
+            </div>
+
+            <span class="search-title-icon">
+                🔎
+            </span>
+
+        </div>
+
+
+        <div class="search-box">
+
+            <div class="search-input">
+
+                <span class="search-icon">
+                    🔎
+                </span>
+
+                <input class="form-control"
+                       placeholder="Ej: 0102030405, Juan, 099..., correo..."
+                       value="@textoBusqueda"
+                       @oninput="BuscarMientrasEscribe" />
+
+            </div>
+
+
+            @if (!string.IsNullOrWhiteSpace(textoBusqueda))
+            {
+                <button class="btn btn-clear"
+                        title="Limpiar búsqueda"
+                        @onclick="LimpiarBusqueda">
+
+                    ✕
+
+                </button>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- CONTENIDO -->
+    @if (cargando)
+    {
+        <div class="loading-card">
+
+            <div class="spinner"></div>
+
+            <h5>Cargando clientes...</h5>
+
+            <p>
+                Estamos obteniendo la información de los clientes.
+            </p>
+
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert custom-alert">
+
+            <span>⚠</span>
+
+            <span>@error</span>
+
+        </div>
+    }
+    else
+    {
+        <!-- TABLA -->
+        <div class="clients-card">
+
+            <div class="clients-card-header">
+
+                <div>
+                    <h5>Lista de clientes</h5>
+
+                    <span>
+                        @clientes.Count cliente(s) encontrado(s)
+                    </span>
+                </div>
+
+                <div class="table-info">
+
+                    <span>●</span>
+
+                    Clientes
+
+                </div>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table clients-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>IDENTIFICACIÓN</th>
+
+                            <th>CLIENTE</th>
+
+                            <th>DIRECCIÓN</th>
+
+                            <th>TELÉFONO</th>
+
+                            <th>CORREO</th>
+
+                            <th class="text-center">
+                                ACCIONES
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @if (clientes.Count == 0)
+                        {
+                            <tr>
+
+                                <td colspan="7">
+
+                                    <div class="empty-state">
+
+                                        <div class="empty-icon">
+                                            👥
+                                        </div>
+
+                                        <h5>
+                                            No se encontraron clientes
+                                        </h5>
+
+                                        <p>
+                                            Intenta buscar con otro dato.
+                                        </p>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var cliente in clientes)
+                            {
+                                <tr>
+
+                                    <!-- ID -->
+                                    <td>
+
+                                        <span class="client-id">
+                                            #@cliente.id_cliente
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- IDENTIFICACIÓN -->
+                                    <td>
+
+                                        <div class="identification">
+
+                                            <strong>
+                                                @cliente.identificacion
+                                            </strong>
+
+                                            <small>
+                                                @cliente.tipo_identificacion
+                                            </small>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- CLIENTE -->
+                                    <td>
+
+                                        <div class="client-name">
+
+                                            <div class="client-avatar">
+                                                @ObtenerIniciales(
+                                                    cliente.razon_social)
+                                            </div>
+
+                                            <div>
+
+                                                <strong>
+                                                    @cliente.razon_social
+                                                </strong>
+
+                                                <small>
+                                                    Cliente #@cliente.id_cliente
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- DIRECCIÓN -->
+                                    <td>
+
+                                        <span class="address-text">
+                                            @(string.IsNullOrWhiteSpace(
+                                                cliente.direccion)
+                                                ? "Sin dirección"
+                                                : cliente.direccion)
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- TELÉFONO -->
+                                    <td>
+
+                                        <span class="phone-text">
+                                            @(string.IsNullOrWhiteSpace(
+                                                cliente.telefono)
+                                                ? "Sin teléfono"
+                                                : cliente.telefono)
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- EMAIL -->
+                                    <td>
+
+                                        @if (!string.IsNullOrWhiteSpace(
+                                            cliente.email))
+                                        {
+                                            <span class="email-text">
+                                                @cliente.email
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="no-data">
+                                                Sin correo
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- ACCIONES -->
+                                    <td>
+
+                                        <div class="action-buttons">
+
+                                            <button class="action-btn edit-btn"
+                                                    title="Editar cliente"
+                                                    @onclick="() => EditarCliente(cliente)">
+
+                                                ✎
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+<!-- MODAL CLIENTE -->
+@if (mostrarFormulario)
+{
+    <div class="modal-backdrop-custom"></div>
+
+    <div class="modal d-block client-modal"
+         tabindex="-1">
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <!-- HEADER -->
+                <div class="modal-header-custom">
+
+                    <div class="modal-title-container">
+
+                        <div class="modal-icon">
+                            👤
+                        </div>
+
+                        <div>
+
+                            <h5>
+                                @(clienteEditando
+                                    ? "Editar cliente"
+                                    : "Nuevo cliente")
+                            </h5>
+
+                            <span>
+                                @(clienteEditando
+                                    ? "Actualiza la información del cliente"
+                                    : "Registra un nuevo cliente")
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <button type="button"
+                            class="close-modal"
+                            @onclick="CerrarFormulario">
+
+                        ✕
+
+                    </button>
+
+                </div>
+
+
+                <!-- BODY -->
+                <div class="modal-body-custom">
+
+                    <div class="row g-3">
+
+                        <!-- TIPO IDENTIFICACIÓN -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Tipo de identificación
+                            </label>
+
+                            <select class="form-select"
+                                    @bind="clienteForm.tipo_identificacion">
+
+                                <option value="">
+                                    Seleccione
+                                </option>
+
+                                <option value="Cédula">
+                                    Cédula
+                                </option>
+
+                                <option value="RUC">
+                                    RUC
+                                </option>
+
+                                <option value="Pasaporte">
+                                    Pasaporte
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- IDENTIFICACIÓN -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Identificación
+                            </label>
+
+                            <input class="form-control"
+                                   placeholder="Ej: 0102030405"
+                                   @bind="clienteForm.identificacion" />
+
+                        </div>
+
+
+                        <!-- RAZÓN SOCIAL -->
+                        <div class="col-12">
+
+                            <label>
+                                Nombre / Razón social
+                            </label>
+
+                            <input class="form-control"
+                                   placeholder="Nombre completo o razón social"
+                                   @bind="clienteForm.razon_social" />
+
+                        </div>
+
+
+                        <!-- DIRECCIÓN -->
+                        <div class="col-12">
+
+                            <label>
+                                Dirección
+                            </label>
+
+                            <input class="form-control"
+                                   placeholder="Dirección del cliente"
+                                   @bind="clienteForm.direccion" />
+
+                        </div>
+
+
+                        <!-- TELÉFONO -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Teléfono
+                            </label>
+
+                            <input class="form-control"
+                                   placeholder="Ej: 0991234567"
+                                   @bind="clienteForm.telefono" />
+
+                        </div>
+
+
+                        <!-- EMAIL -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Correo electrónico
+                            </label>
+
+                            <input type="email"
+                                   class="form-control"
+                                   placeholder="cliente@correo.com"
+                                   @bind="clienteForm.email" />
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FOOTER -->
+                <div class="modal-footer-custom">
+
+                    <button class="btn btn-modal-cancel"
+                            @onclick="CerrarFormulario">
+
+                        Cancelar
+
+                    </button>
+
+                    <button class="btn btn-modal-save"
+                            @onclick="GuardarCliente">
+
+                        @(clienteEditando
+                            ? "Guardar cambios"
+                            : "Guardar cliente")
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+<style>
+
+    .clientes-page {
+        padding: 30px;
+        background: #f5f7fb;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 28px;
+    }
+
+    .page-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .title-icon {
+        width: 55px;
+        height: 55px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #2563eb;
+        color: white;
+        font-size: 25px;
+    }
+
+    .page-title h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #172033;
+    }
+
+    .page-title p {
+        margin: 4px 0 0;
+        color: #7a8497;
+    }
+
+    .btn-new-client {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+        .btn-new-client:hover {
+            background: #1d4ed8;
+            color: white;
+        }
+
+
+    /* ESTADÍSTICAS */
+
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 3px 15px rgba(0,0,0,.05);
+        height: 100%;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 13px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+    }
+
+    .clients-icon {
+        background: #e8f0ff;
+    }
+
+    .result-icon {
+        background: #eef2ff;
+    }
+
+    .email-icon {
+        background: #e9f8ef;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .stat-info span {
+            color: #7b8495;
+            font-size: 14px;
+        }
+
+        .stat-info strong {
+            font-size: 25px;
+            color: #172033;
+        }
+
+
+    /* BUSCADOR */
+
+    .search-card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 22px;
+        box-shadow: 0 3px 15px rgba(0,0,0,.05);
+    }
+
+    .search-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+        .search-title h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #172033;
+        }
+
+        .search-title span {
+            color: #7b8495;
+            font-size: 13px;
+        }
+
+    .search-title-icon {
+        font-size: 22px;
+    }
+
+    .search-box {
+        display: flex;
+        gap: 10px;
+    }
+
+    .search-input {
+        flex: 1;
+        position: relative;
+    }
+
+        .search-input input {
+            height: 45px;
+            border-radius: 10px;
+            padding-left: 42px;
+            border: 1px solid #dce1ea;
+        }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 10px;
+        z-index: 2;
+    }
+
+    .btn-clear {
+        width: 45px;
+        height: 45px;
+        border: 1px solid #dce1ea;
+        background: white;
+        border-radius: 10px;
+    }
+
+
+    /* TABLA */
+
+    .clients-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0,0,0,.05);
+    }
+
+    .clients-card-header {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #edf0f5;
+    }
+
+        .clients-card-header h5 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .clients-card-header span {
+            color: #7b8495;
+            font-size: 13px;
+        }
+
+    .table-info {
+        padding: 8px 12px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+
+    .clients-table {
+        margin: 0;
+        vertical-align: middle;
+    }
+
+        .clients-table thead {
+            background: #f8fafc;
+        }
+
+        .clients-table th {
+            padding: 14px 16px;
+            font-size: 11px;
+            color: #7b8495;
+            border: none;
+            white-space: nowrap;
+        }
+
+        .clients-table td {
+            padding: 15px 16px;
+            border-color: #edf0f5;
+        }
+
+    .client-id {
+        font-weight: 700;
+        color: #64748b;
+    }
+
+    .identification {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .identification strong {
+            color: #172033;
+        }
+
+        .identification small {
+            color: #8b94a5;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+    .client-name {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .client-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e8f0ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .client-name strong {
+        display: block;
+        color: #172033;
+    }
+
+    .client-name small {
+        color: #8b94a5;
+        font-size: 11px;
+    }
+
+    .address-text,
+    .phone-text,
+    .email-text {
+        color: #4b5563;
+        font-size: 13px;
+    }
+
+    .email-text {
+        color: #2563eb;
+    }
+
+    .no-data {
+        color: #a0a7b4;
+        font-size: 13px;
+    }
+
+
+    /* ACCIONES */
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 7px;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 9px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .edit-btn {
+        background: #eef4ff;
+        color: #2563eb;
+    }
+
+        .edit-btn:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+
+    /* LOADING */
+
+    .loading-card {
+        background: white;
+        border-radius: 15px;
+        padding: 50px;
+        text-align: center;
+    }
+
+        .loading-card h5 {
+            margin-top: 15px;
+        }
+
+        .loading-card p {
+            color: #7b8495;
+        }
+
+    .spinner {
+        width: 35px;
+        height: 35px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #2563eb;
+        border-radius: 50%;
+        margin: auto;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+
+    /* ALERTA */
+
+    .custom-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff1f2;
+        color: #be123c;
+        border: none;
+        border-radius: 12px;
+        padding: 15px;
+    }
+
+
+    /* VACÍO */
+
+    .empty-state {
+        padding: 55px 20px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        font-size: 45px;
+        margin-bottom: 10px;
+    }
+
+    .empty-state h5 {
+        color: #172033;
+        font-weight: 700;
+    }
+
+    .empty-state p {
+        color: #7b8495;
+    }
+
+
+    /* MODAL */
+
+    .modal-backdrop-custom {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,.55);
+        z-index: 1040;
+    }
+
+    .client-modal {
+        z-index: 1050;
+    }
+
+        .client-modal .modal-content {
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+    .modal-header-custom {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #edf0f5;
+    }
+
+    .modal-title-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .modal-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        background: #e8f0ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .modal-header-custom h5 {
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .modal-header-custom span {
+        color: #7b8495;
+        font-size: 12px;
+    }
+
+    .close-modal {
+        border: none;
+        background: #f1f5f9;
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+    }
+
+    .modal-body-custom {
+        padding: 25px;
+    }
+
+        .modal-body-custom label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .modal-body-custom .form-control,
+        .modal-body-custom .form-select {
+            border-radius: 9px;
+            border: 1px solid #dce1ea;
+            padding: 10px 12px;
+        }
+
+    .modal-footer-custom {
+        padding: 16px 25px;
+        border-top: 1px solid #edf0f5;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal-cancel {
+        border: 1px solid #dce1ea;
+        background: white;
+        border-radius: 9px;
+        padding: 10px 18px;
+    }
+
+    .btn-modal-save {
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 9px;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+
+        .btn-modal-save:hover {
+            background: #1d4ed8;
+            color: white;
+        }
+
+
+    /* RESPONSIVE */
+
+    @@media (max-width: 900px) {
+
+        .clientes-page {
+            padding: 20px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .btn-new-client {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+</style>
+
+
+@code {
+
+    private List<clientes> todosLosClientes = new();
+    private List<clientes> clientes = new();
+
+    private clientes clienteForm = new();
+
+    private bool cargando = true;
+    private bool mostrarFormulario = false;
+    private bool clienteEditando = false;
+
+    private string textoBusqueda = string.Empty;
+    private string error = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarClientes();
+    }
+
+
+    private async Task CargarClientes()
+    {
+        try
+        {
+            cargando = true;
+            error = string.Empty;
+
+            todosLosClientes =
+                await ClienteApiService.ObtenerClientesAsync();
+
+            clientes =
+                todosLosClientes.ToList();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al cargar los clientes: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+
+    private void BuscarMientrasEscribe(ChangeEventArgs e)
+    {
+        textoBusqueda =
+            e.Value?.ToString() ?? string.Empty;
+
+        AplicarBusqueda();
+    }
+
+
+    private void AplicarBusqueda()
+    {
+        if (string.IsNullOrWhiteSpace(textoBusqueda))
+        {
+            clientes =
+                todosLosClientes.ToList();
+
+            return;
+        }
+
+        var texto =
+            textoBusqueda.Trim();
+
+        clientes =
+            todosLosClientes
+                .Where(x =>
+                    (!string.IsNullOrWhiteSpace(x.identificacion) &&
+                     x.identificacion.Contains(
+                         texto,
+                         StringComparison.OrdinalIgnoreCase))
+                    ||
+                    (!string.IsNullOrWhiteSpace(x.razon_social) &&
+                     x.razon_social.Contains(
+                         texto,
+                         StringComparison.OrdinalIgnoreCase))
+                    ||
+                    (!string.IsNullOrWhiteSpace(x.telefono) &&
+                     x.telefono.Contains(
+                         texto,
+                         StringComparison.OrdinalIgnoreCase))
+                    ||
+                    (!string.IsNullOrWhiteSpace(x.email) &&
+                     x.email.Contains(
+                         texto,
+                         StringComparison.OrdinalIgnoreCase))
+                )
+                .ToList();
+    }
+
+
+    private void LimpiarBusqueda()
+    {
+        textoBusqueda = string.Empty;
+
+        clientes =
+            todosLosClientes.ToList();
+    }
+
+
+    private void NuevoCliente()
+    {
+        clienteEditando = false;
+
+        clienteForm = new clientes();
+
+        mostrarFormulario = true;
+    }
+
+
+    private void EditarCliente(clientes cliente)
+    {
+        clienteEditando = true;
+
+        clienteForm = new clientes
+        {
+            id_cliente = cliente.id_cliente,
+            tipo_identificacion = cliente.tipo_identificacion,
+            identificacion = cliente.identificacion,
+            razon_social = cliente.razon_social,
+            direccion = cliente.direccion,
+            telefono = cliente.telefono,
+            email = cliente.email
+        };
+
+        mostrarFormulario = true;
+    }
+
+
+    private void CerrarFormulario()
+    {
+        mostrarFormulario = false;
+    }
+
+
+    private async Task GuardarCliente()
+    {
+        try
+        {
+            error = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(
+                clienteForm.identificacion))
+            {
+                error =
+                    "Ingrese la identificación del cliente.";
+
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(
+                clienteForm.razon_social))
+            {
+                error =
+                    "Ingrese el nombre o razón social.";
+
+                return;
+            }
+
+
+            if (clienteEditando)
+            {
+                await ClienteApiService.ActualizarClienteAsync(
+                    clienteForm.id_cliente,
+                    clienteForm);
+            }
+            else
+            {
+                await ClienteApiService.CrearClienteAsync(
+                    clienteForm);
+            }
+
+
+            mostrarFormulario = false;
+
+            await CargarClientes();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al guardar el cliente: {ex.Message}";
+        }
+    }
+
+
+    private string ObtenerIniciales(string nombre)
+    {
+        if (string.IsNullOrWhiteSpace(nombre))
+            return "?";
+
+        var palabras =
+            nombre
+                .Trim()
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries);
+
+        if (palabras.Length == 1)
+            return palabras[0]
+                .Substring(
+                    0,
+                    Math.Min(2, palabras[0].Length))
+                .ToUpper();
+
+        return (
+            palabras[0][0].ToString() +
+            palabras[^1][0].ToString()
+        ).ToUpper();
+    }
+
+}

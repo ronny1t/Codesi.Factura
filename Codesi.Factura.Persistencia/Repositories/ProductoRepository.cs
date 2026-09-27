@@ -29,23 +29,22 @@ namespace Codesi.Factura.Persistencia.Repositories
                 .FirstOrDefault(p => p.id_producto == id);
         }
 
-        // Buscar producto por código
-        public productos? ObtenerPorCodigo(string codigo)
+     
+// Buscar productos por nombre o código
+public List<productos> Buscar(string texto)
         {
             return _context.productos
                 .AsNoTracking()
-                .FirstOrDefault(p => p.codigo_principal == codigo);
-        }
-
-        // Buscar productos por nombre
-        public List<productos> BuscarPorNombre(string nombre)
-        {
-            return _context.productos
-                .AsNoTracking()
-                .Where(p => p.nombre.Contains(nombre)
-                            && p.activo == true)
+                .Where(p =>
+                    p.activo == true &&
+                    (
+                        p.nombre.Contains(texto) ||
+                        p.codigo_principal.Contains(texto)
+                    )
+                )
                 .ToList();
         }
+
 
         // Insertar producto
         public void InsertarProducto(productos producto)

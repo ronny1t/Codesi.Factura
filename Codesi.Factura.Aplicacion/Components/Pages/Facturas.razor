@@ -1,0 +1,390 @@
+﻿@page "/facturas"
+
+@using Codesi.Factura.Aplicacion.Models
+@using Codesi.Factura.Aplicacion.Services
+
+@inject FacturaService FacturaService
+
+<PageTitle>Facturas</PageTitle>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>
+            <i class="bi bi-receipt"></i>
+            Facturas
+        </h3>
+
+        <button class="btn btn-primary" @onclick="CargarFacturas">
+            🔄 Actualizar
+        </button>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2">Cargando facturas...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger">
+            @error
+        </div>
+    }
+    else if (facturas.Count == 0)
+    {
+        <div class="alert alert-info">
+            No existen facturas registradas.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+
+            <table class="table table-hover table-bordered">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Estado SRI</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var factura in facturas)
+                    {
+                        <tr>
+
+                            <td>
+                                @factura.id_factura
+                            </td>
+
+                            <td>
+                                @factura.id_cliente
+                            </td>
+
+                            <td>
+                                @(factura.fecha_emision?.ToString("dd/MM/yyyy HH:mm")
+                                    ?? "Sin fecha")
+                            </td>
+
+                            <td>
+                                @if (factura.estado_sri == "AUTORIZADA")
+                                {
+                                    <span class="badge bg-success">
+                                        AUTORIZADA
+                                    </span>
+                                }
+                                else if (factura.estado_sri == "RECHAZADA")
+                                {
+                                    <span class="badge bg-danger">
+                                        RECHAZADA
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">
+                                        @(factura.estado_sri ?? "PENDIENTE")
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                $@factura.importe_total.ToString("N2")
+                            </td>
+
+                            <td>
+
+                                <button class="btn btn-sm btn-info me-1"
+                                        @onclick="() => VerFactura(factura.id_factura)">
+                                    Ver
+                                </button>
+
+                                <button class="btn btn-sm btn-success"
+                                        @onclick="() => AutorizarFactura(factura.id_factura)">
+                                    Autorizar
+                                </button>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    }
+
+</div>
+
+@if (mostrarDetalle && facturaSeleccionada != null)
+{
+    <div class="modal fade show d-block"
+         tabindex="-1"
+         style="background-color: rgba(0,0,0,0.5);">
+
+        <div class="modal-dialog modal-lg">
+
+            <div class="modal-content">
+
+                <div class="modal-header">
+
+                    <h5 class="modal-title">
+                        Factura #@facturaSeleccionada.id_factura
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="CerrarDetalle">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="row mb-3">
+
+                        <div class="col-md-6">
+                            <strong>Cliente:</strong>
+                            @facturaSeleccionada.id_cliente
+                        </div>
+
+                        <div class="col-md-6">
+                            <strong>Fecha:</strong>
+                            @(facturaSeleccionada.fecha_emision?
+                                .ToString("dd/MM/yyyy HH:mm")
+                                ?? "Sin fecha")
+                        </div>
+
+                    </div>
+
+                    <hr />
+
+                    <h5>Detalles</h5>
+
+                    @if (detalles.Count == 0)
+                    {
+                        <p>No existen detalles para esta factura.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm table-bordered">
+
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio</th>
+                                    <th>Subtotal</th>
+                                    <th>IVA</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var detalle in detalles)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            @detalle.id_producto
+                                        </td>
+
+                                        <td>
+                                            @detalle.cantidad
+                                        </td>
+
+                                        <td>
+                                            $@detalle.precio_unitario.ToString("N2")
+                                        </td>
+
+                                        <td>
+                                            $@detalle.subtotal.ToString("N2")
+                                        </td>
+
+                                        <td>
+                                            $@detalle.valor_iva.ToString("N2")
+                                        </td>
+
+                                        <td>
+                                            $@detalle.total.ToString("N2")
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+                    }
+
+                    <hr />
+
+                    <h5>Pagos</h5>
+
+                    @if (pagos.Count == 0)
+                    {
+                        <p>No existen pagos registrados.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm table-bordered">
+
+                            <thead>
+                                <tr>
+                                    <th>Forma de pago</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var pago in pagos)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            @pago.forma_pago
+                                        </td>
+
+                                        <td>
+                                            $@pago.total.ToString("N2")
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+                    }
+
+                    <div class="text-end mt-3">
+
+                        <h4>
+                            Total:
+                            $@facturaSeleccionada.importe_total.ToString("N2")
+                        </h4>
+
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button class="btn btn-secondary"
+                            @onclick="CerrarDetalle">
+                        Cerrar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+@code {
+
+    private List<Factura> facturas = new();
+
+    private Factura? facturaSeleccionada;
+
+    private List<FacturaDetalle> detalles = new();
+
+    private List<FacturaPago> pagos = new();
+
+    private bool cargando = true;
+
+    private bool mostrarDetalle = false;
+
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarFacturas();
+    }
+
+    private async Task CargarFacturas()
+    {
+        try
+        {
+            cargando = true;
+            error = null;
+
+            facturas = await FacturaService.ObtenerFacturas();
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al cargar las facturas: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task VerFactura(int id)
+    {
+        try
+        {
+            facturaSeleccionada =
+                await FacturaService.ObtenerFacturaPorId(id);
+
+            if (facturaSeleccionada == null)
+            {
+                error = "No se encontró la factura.";
+                return;
+            }
+
+            detalles =
+                await FacturaService.ObtenerDetalles(id);
+
+            pagos =
+                await FacturaService.ObtenerPagos(id);
+
+            mostrarDetalle = true;
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al obtener la factura: {ex.Message}";
+        }
+    }
+
+    private void CerrarDetalle()
+    {
+        mostrarDetalle = false;
+        facturaSeleccionada = null;
+        detalles.Clear();
+        pagos.Clear();
+    }
+
+    private async Task AutorizarFactura(int id)
+    {
+        try
+        {
+            await FacturaService.ActualizarEstado(
+                id,
+                "AUTORIZADA"
+            );
+
+            await CargarFacturas();
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al actualizar el estado: {ex.Message}";
+        }
+    }
+}

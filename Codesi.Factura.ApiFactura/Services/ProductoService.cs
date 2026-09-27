@@ -22,15 +22,13 @@ namespace Codesi.Factura.Api.Services
             return _repository.ObtenerProductoPorId(id);
         }
 
-        public productos? ObtenerPorCodigo(string codigo)
+     
+public List<productos> Buscar(string texto)
         {
-            return _repository.ObtenerPorCodigo(codigo);
+            return _repository.Buscar(texto);
         }
 
-        public List<productos> BuscarPorNombre(string nombre)
-        {
-            return _repository.BuscarPorNombre(nombre);
-        }
+
 
         public void CrearProducto(productos producto)
         {

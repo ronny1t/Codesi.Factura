@@ -1,0 +1,1592 @@
+﻿
+@page "/productos"
+@rendermode InteractiveServer
+
+@using Codesi.Factura.Aplicacion.Models
+@using Codesi.Factura.Aplicacion.Services
+
+@inject ProductoService ProductoService
+@inject CategoriaService CategoriaService
+
+<PageTitle>Productos</PageTitle>
+
+<div class="productos-page">
+
+    <!-- ENCABEZADO -->
+    <div class="page-header">
+
+        <div class="page-title">
+
+            <div class="title-icon">
+                📦
+            </div>
+
+            <div>
+                <h1>Productos</h1>
+                <p>Administra tu inventario de productos</p>
+            </div>
+
+        </div>
+
+        <button class="btn-new-product"
+                @onclick="NuevoProducto">
+
+            <span class="plus-icon">+</span>
+            <span>Nuevo producto</span>
+
+        </button>
+
+    </div>
+
+
+    <!-- ESTADÍSTICAS -->
+    <div class="row g-3 mb-4">
+
+        <!-- TOTAL -->
+        <div class="col-md-4">
+
+            <div class="stat-card">
+
+                <div class="stat-icon products-icon">
+                    📦
+                </div>
+
+                <div class="stat-info">
+
+                    <span>Total productos</span>
+
+                    <strong>@productos.Count</strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- STOCK BAJO -->
+        <div class="col-md-4">
+
+            <div class="stat-card">
+
+                <div class="stat-icon stock-icon">
+                    ⚠
+                </div>
+
+                <div class="stat-info">
+
+                    <span>Stock bajo</span>
+
+                    <strong>
+                        @productos.Count(x => x.stock <= 5)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- CATEGORÍAS -->
+        <div class="col-md-4">
+
+            <div class="stat-card">
+
+                <div class="stat-icon category-icon">
+                    #
+                </div>
+
+                <div class="stat-info">
+
+                    <span>Categorías</span>
+
+                    <strong>@categorias.Count</strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- BUSCADOR -->
+    <div class="search-card">
+
+        <div class="search-header">
+
+            <div>
+
+                <h5>Buscar productos</h5>
+
+                <span>
+                    Escribe el nombre o código del producto
+                </span>
+
+            </div>
+
+            <div class="result-count">
+
+                @productos.Count resultado(s)
+
+            </div>
+
+        </div>
+
+
+        <div class="search-container">
+
+            <div class="search-input-container">
+
+                <span class="search-symbol">
+                    🔎
+                </span>
+
+                <input class="form-control search-input"
+                       placeholder="Ejemplo: cerveza, whisky, PROD001..."
+                       value="@textoBusqueda"
+                       @oninput="BuscarMientrasEscribe" />
+
+                @if (!string.IsNullOrWhiteSpace(textoBusqueda))
+                {
+                    <button class="clear-search"
+                            @onclick="LimpiarBusqueda"
+                            title="Limpiar búsqueda">
+
+                        ×
+
+                    </button>
+                }
+
+            </div>
+
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(textoBusqueda))
+        {
+            <div class="search-status">
+
+                Buscando:
+
+                <strong>
+                    "@textoBusqueda"
+                </strong>
+
+            </div>
+        }
+
+    </div>
+
+
+    <!-- CONTENIDO -->
+    @if (cargando)
+    {
+        <div class="loading-card">
+
+            <div class="loading-spinner"></div>
+
+            <h5>Cargando productos...</h5>
+
+            <p>
+                Estamos obteniendo la información del inventario.
+            </p>
+
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(error))
+    {
+        <div class="custom-alert">
+
+            <span class="alert-icon">!</span>
+
+            <span>@error</span>
+
+        </div>
+    }
+    else
+    {
+
+        <!-- TABLA -->
+        <div class="products-card">
+
+            <div class="products-card-header">
+
+                <div>
+
+                    <h5>Lista de productos</h5>
+
+                    <span>
+                        @productos.Count producto(s) encontrado(s)
+                    </span>
+
+                </div>
+
+                <div class="table-info">
+                    INVENTARIO
+                </div>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table products-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>CÓDIGO</th>
+
+                            <th>PRODUCTO</th>
+
+                            <th>CATEGORÍA</th>
+
+                            <th>PRECIO</th>
+
+                            <th>STOCK</th>
+
+                            <th>IVA</th>
+
+                            <th class="text-center">
+                                ACCIONES
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @if (productos.Count == 0)
+                        {
+                            <tr>
+
+                                <td colspan="7">
+
+                                    <div class="empty-state">
+
+                                        <div class="empty-icon">
+                                            📦
+                                        </div>
+
+                                        <h5>
+                                            No se encontraron productos
+                                        </h5>
+
+                                        <p>
+                                            Intenta buscar con otro nombre o código.
+                                        </p>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var producto in productos)
+                            {
+                                <tr>
+
+                                    <!-- CÓDIGO -->
+                                    <td>
+
+                                        <span class="product-code">
+                                            @producto.codigo_principal
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- PRODUCTO -->
+                                    <td>
+
+                                        <div class="product-name">
+
+                                            <div class="product-icon">
+                                                📦
+                                            </div>
+
+                                            <div>
+
+                                                <strong>
+                                                    @producto.nombre
+                                                </strong>
+
+                                                <small>
+                                                    ID: @producto.id_producto
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- CATEGORÍA -->
+                                    <td>
+
+                                        <span class="category-badge">
+
+                                            @ObtenerNombreCategoria(
+                                                producto.id_categoria)
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- PRECIO -->
+                                    <td>
+
+                                        <strong class="product-price">
+
+                                            $@producto.precio_unitario.ToString("0.00")
+
+                                        </strong>
+
+                                    </td>
+
+
+                                    <!-- STOCK -->
+                                    <td>
+
+                                        @if (producto.stock <= 5)
+                                        {
+                                            <span class="stock-badge stock-low">
+
+                                                ⚠ @producto.stock
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="stock-badge stock-ok">
+
+                                                ✓ @producto.stock
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- IVA -->
+                                    <td>
+
+                                        <span class="iva-badge">
+
+                                            @producto.tarifa_iva%
+
+                                        </span>
+
+                                    </td>
+
+
+                                    <!-- ACCIONES -->
+                                    <td>
+
+                                        <div class="action-buttons">
+
+                                            <button class="action-btn edit-btn"
+                                                    title="Editar producto"
+                                                    @onclick="() => EditarProducto(producto)">
+
+                                                ✎
+
+                                            </button>
+
+                                            <button class="action-btn delete-btn"
+                                                    title="Desactivar producto"
+                                                    @onclick="() => DesactivarProducto(producto)">
+
+                                                🗑
+
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    }
+
+</div>
+
+
+<!-- MODAL PRODUCTO -->
+@if (mostrarFormulario)
+{
+    <div class="modal-backdrop-custom"></div>
+
+    <div class="modal d-block product-modal"
+         tabindex="-1">
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <!-- MODAL HEADER -->
+                <div class="modal-header-custom">
+
+                    <div class="modal-title-container">
+
+                        <div class="modal-icon">
+                            📦
+                        </div>
+
+                        <div>
+
+                            <h5>
+                                @(productoEditando
+                                    ? "Editar producto"
+                                    : "Nuevo producto")
+                            </h5>
+
+                            <span>
+                                @(productoEditando
+                                    ? "Actualiza la información del producto"
+                                    : "Registra un nuevo producto")
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <button type="button"
+                            class="close-modal"
+                            @onclick="CerrarFormulario">
+
+                        ×
+
+                    </button>
+
+                </div>
+
+
+                <!-- MODAL BODY -->
+                <div class="modal-body-custom">
+
+                    <div class="row g-3">
+
+                        <!-- CÓDIGO -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Código
+                            </label>
+
+                            <input class="form-control"
+                                   placeholder="Ej: PROD001"
+                                   @bind="productoForm.codigo_principal" />
+
+                        </div>
+
+
+                        <!-- NOMBRE -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Nombre
+                            </label>
+
+                            <input class="form-control"
+                                   placeholder="Nombre del producto"
+                                   @bind="productoForm.nombre" />
+
+                        </div>
+
+
+                        <!-- CATEGORÍA -->
+                        <div class="col-12">
+
+                            <label>
+                                Categoría
+                            </label>
+
+                            <select class="form-select"
+                                    @bind="productoForm.id_categoria">
+
+                                <option value="">
+                                    Seleccione una categoría
+                                </option>
+
+                                @foreach (var categoria in categorias)
+                                {
+                                    <option value="@categoria.id_categoria">
+                                        @categoria.nombre
+                                    </option>
+                                }
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- PRECIO -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Precio
+                            </label>
+
+                            <div class="input-group">
+
+                                <span class="input-group-text">
+                                    $
+                                </span>
+
+                                <input type="number"
+                                       step="0.01"
+                                       class="form-control"
+                                       @bind="productoForm.precio_unitario" />
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- STOCK -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Stock
+                            </label>
+
+                            <input type="number"
+                                   class="form-control"
+                                   placeholder="0"
+                                   @bind="productoForm.stock" />
+
+                        </div>
+
+
+                        <!-- IVA -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Tarifa IVA
+                            </label>
+
+                            <div class="input-group">
+
+                                <input type="number"
+                                       step="0.01"
+                                       class="form-control"
+                                       @bind="productoForm.tarifa_iva" />
+
+                                <span class="input-group-text">
+                                    %
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ESTADO -->
+                        <div class="col-md-6">
+
+                            <label>
+                                Estado
+                            </label>
+
+                            <div class="active-switch">
+
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       @bind="productoForm.activo" />
+
+                                <span>
+                                    Producto activo
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- MODAL FOOTER -->
+                <div class="modal-footer-custom">
+
+                    <button class="btn-modal-cancel"
+                            @onclick="CerrarFormulario">
+
+                        Cancelar
+
+                    </button>
+
+                    <button class="btn-modal-save"
+                            @onclick="GuardarProducto">
+
+                        @(productoEditando
+                            ? "Guardar cambios"
+                            : "Guardar producto")
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+<style>
+
+    /* =========================
+           PÁGINA
+           ========================= */
+
+    .productos-page {
+        padding: 25px;
+        background: #f5f7fb;
+        min-height: calc(100vh - 60px);
+    }
+
+
+    /* =========================
+           ENCABEZADO
+           ========================= */
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .page-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .title-icon {
+        width: 55px;
+        height: 55px;
+        border-radius: 14px;
+        background: #2563eb;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 25px;
+        box-shadow: 0 6px 15px rgba(37, 99, 235, .25);
+    }
+
+    .page-title h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #172033;
+    }
+
+    .page-title p {
+        margin: 4px 0 0;
+        color: #7b8495;
+        font-size: 14px;
+    }
+
+
+    /* =========================
+           BOTÓN NUEVO
+           ========================= */
+
+    .btn-new-product {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 5px 12px rgba(37, 99, 235, .25);
+        transition: .2s;
+    }
+
+        .btn-new-product:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+    .plus-icon {
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+
+    /* =========================
+           ESTADÍSTICAS
+           ========================= */
+
+    .stat-card {
+        background: white;
+        border-radius: 14px;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        border: 1px solid #e8ebf2;
+        transition: .2s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,.06);
+        }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .products-icon {
+        background: #e8f0ff;
+    }
+
+    .stock-icon {
+        background: #fff4df;
+    }
+
+    .category-icon {
+        background: #e8f8ef;
+        color: #16a34a;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .stat-info span {
+            color: #7b8495;
+            font-size: 13px;
+        }
+
+        .stat-info strong {
+            font-size: 24px;
+            color: #172033;
+        }
+
+
+    /* =========================
+           BUSCADOR
+           ========================= */
+
+    .search-card {
+        background: white;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 3px 12px rgba(0,0,0,.03);
+    }
+
+    .search-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+        .search-header h5 {
+            margin: 0;
+            color: #172033;
+            font-weight: 700;
+        }
+
+        .search-header span {
+            color: #8a93a3;
+            font-size: 13px;
+        }
+
+    .result-count {
+        background: #eef3ff;
+        color: #2563eb;
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .search-input-container {
+        position: relative;
+    }
+
+    .search-input {
+        height: 48px;
+        border: 1px solid #dfe3ea;
+        border-radius: 10px;
+        padding-left: 45px;
+        padding-right: 45px;
+        font-size: 14px;
+        transition: .2s;
+    }
+
+        .search-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+        }
+
+    .search-symbol {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 21px;
+        z-index: 2;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 30px;
+        height: 30px;
+        border: none;
+        border-radius: 50%;
+        background: #f1f3f6;
+        color: #6b7280;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+        .clear-search:hover {
+            background: #e5e7eb;
+        }
+
+    .search-status {
+        margin-top: 10px;
+        color: #7b8495;
+        font-size: 13px;
+    }
+
+        .search-status strong {
+            color: #2563eb;
+        }
+
+
+    /* =========================
+           TABLA
+           ========================= */
+
+    .products-card {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #e8ebf2;
+        overflow: hidden;
+    }
+
+    .products-card-header {
+        padding: 18px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #edf0f4;
+    }
+
+        .products-card-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #172033;
+        }
+
+        .products-card-header span {
+            font-size: 13px;
+            color: #8a93a3;
+        }
+
+    .table-info {
+        background: #f1f5ff;
+        color: #2563eb;
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .products-table {
+        margin: 0;
+        vertical-align: middle;
+    }
+
+        .products-table thead th {
+            background: #f8f9fc;
+            color: #737d90;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 15px 18px;
+            border-bottom: 1px solid #e8ebf2;
+        }
+
+        .products-table tbody td {
+            padding: 15px 18px;
+            border-bottom: 1px solid #f0f2f5;
+            color: #394150;
+        }
+
+        .products-table tbody tr {
+            transition: .15s;
+        }
+
+            .products-table tbody tr:hover {
+                background: #f8faff;
+            }
+
+
+    /* =========================
+           PRODUCTO
+           ========================= */
+
+    .product-code {
+        background: #eef3ff;
+        color: #2563eb;
+        padding: 6px 9px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .product-name {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .product-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        background: #f0f2f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+    }
+
+    .product-name strong {
+        display: block;
+        color: #202938;
+    }
+
+    .product-name small {
+        display: block;
+        color: #9aa2b1;
+        font-size: 11px;
+        margin-top: 2px;
+    }
+
+
+    /* =========================
+           BADGES
+           ========================= */
+
+    .category-badge {
+        background: #f3f4f6;
+        color: #5f6877;
+        padding: 6px 9px;
+        border-radius: 7px;
+        font-size: 12px;
+    }
+
+    .product-price {
+        color: #172033;
+    }
+
+    .stock-badge {
+        padding: 6px 9px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .stock-ok {
+        background: #e9f8ef;
+        color: #15803d;
+    }
+
+    .stock-low {
+        background: #fff0f0;
+        color: #dc2626;
+    }
+
+    .iva-badge {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 6px 9px;
+        border-radius: 7px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+
+    /* =========================
+           ACCIONES
+           ========================= */
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 7px;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: .2s;
+        font-size: 17px;
+        cursor: pointer;
+    }
+
+    .edit-btn {
+        background: #fff4df;
+    }
+
+        .edit-btn:hover {
+            background: #f59e0b;
+        }
+
+    .delete-btn {
+        background: #fff0f0;
+    }
+
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+
+
+    /* =========================
+           ESTADO VACÍO
+           ========================= */
+
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+    }
+
+    .empty-icon {
+        width: 65px;
+        height: 65px;
+        margin: auto;
+        border-radius: 50%;
+        background: #f0f2f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+    }
+
+    .empty-state h5 {
+        margin-top: 15px;
+        color: #374151;
+    }
+
+    .empty-state p {
+        color: #9aa2b1;
+        font-size: 14px;
+    }
+
+
+    /* =========================
+           CARGANDO
+           ========================= */
+
+    .loading-card {
+        background: white;
+        border-radius: 14px;
+        padding: 60px 20px;
+        text-align: center;
+        border: 1px solid #e8ebf2;
+    }
+
+    .loading-spinner {
+        width: 35px;
+        height: 35px;
+        border: 4px solid #e5e7eb;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        margin: auto;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading-card h5 {
+        margin-top: 15px;
+        color: #374151;
+    }
+
+    .loading-card p {
+        color: #9aa2b1;
+    }
+
+
+    /* =========================
+           ERROR
+           ========================= */
+
+    .custom-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px;
+        border-radius: 10px;
+        background: #fff0f0;
+        color: #b91c1c;
+    }
+
+    .alert-icon {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #dc2626;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+
+    /* =========================
+           MODAL
+           ========================= */
+
+    .modal-backdrop-custom {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, .55);
+        backdrop-filter: blur(3px);
+        z-index: 1040;
+    }
+
+    .product-modal {
+        z-index: 1050;
+    }
+
+        .product-modal .modal-content {
+            border: none;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+        }
+
+    .modal-header-custom {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #edf0f4;
+    }
+
+    .modal-title-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .modal-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        background: #eaf0ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    .modal-title-container h5 {
+        margin: 0;
+        color: #172033;
+        font-weight: 700;
+    }
+
+    .modal-title-container span {
+        color: #8a93a3;
+        font-size: 12px;
+    }
+
+    .close-modal {
+        width: 35px;
+        height: 35px;
+        border: none;
+        border-radius: 8px;
+        background: #f1f3f6;
+        color: #6b7280;
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+        .close-modal:hover {
+            background: #e5e7eb;
+        }
+
+    .modal-body-custom {
+        padding: 25px;
+    }
+
+        .modal-body-custom label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .modal-body-custom .form-control,
+        .modal-body-custom .form-select {
+            border-radius: 8px;
+            border: 1px solid #dfe3ea;
+            min-height: 43px;
+        }
+
+            .modal-body-custom .form-control:focus,
+            .modal-body-custom .form-select:focus {
+                border-color: #2563eb;
+                box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+            }
+
+    .active-switch {
+        min-height: 43px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 12px;
+        border: 1px solid #dfe3ea;
+        border-radius: 8px;
+    }
+
+    .modal-footer-custom {
+        padding: 16px 20px;
+        border-top: 1px solid #edf0f4;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .btn-modal-cancel {
+        background: #f1f3f6;
+        color: #4b5563;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+    }
+
+    .btn-modal-save {
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 18px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .btn-modal-save:hover {
+            background: #1d4ed8;
+        }
+
+
+    /* =========================
+           RESPONSIVE
+           ========================= */
+
+    @@media (max-width: 768px) {
+
+        .productos-page {
+            padding: 15px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 15px;
+        }
+
+        .btn-new-product {
+            justify-content: center;
+        }
+
+        .search-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .products-card-header {
+            align-items: flex-start;
+            gap: 10px;
+        }
+    }
+
+</style>
+
+
+@code {
+
+    private List<Producto> productos = new();
+
+    private List<CategoriaModel> categorias = new();
+
+    private Producto productoForm = new();
+
+    private bool cargando = true;
+
+    private bool mostrarFormulario = false;
+
+    private bool productoEditando = false;
+
+    private string textoBusqueda = string.Empty;
+
+    private string error = string.Empty;
+
+    private CancellationTokenSource? busquedaCancellation;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+
+    private async Task CargarDatos()
+    {
+        try
+        {
+            cargando = true;
+            error = string.Empty;
+
+            productos =
+                await ProductoService.ObtenerProductos();
+
+            categorias =
+                await CategoriaService.ObtenerCategorias();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al cargar los productos: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+
+    // BÚSQUEDA AUTOMÁTICA
+    private async Task BuscarMientrasEscribe(ChangeEventArgs e)
+    {
+        textoBusqueda = e.Value?.ToString() ?? string.Empty;
+
+        busquedaCancellation?.Cancel();
+        busquedaCancellation?.Dispose();
+
+        busquedaCancellation =
+            new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(
+                300,
+                busquedaCancellation.Token);
+
+            error = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(textoBusqueda))
+            {
+                productos =
+                    await ProductoService.ObtenerProductos();
+
+                return;
+            }
+
+            productos =
+                await ProductoService.Buscar(
+                    textoBusqueda.Trim());
+
+        }
+        catch (TaskCanceledException)
+        {
+            // El usuario siguió escribiendo.
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al buscar: {ex.Message}";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+    // LIMPIAR BÚSQUEDA
+    private async Task LimpiarBusqueda()
+    {
+        textoBusqueda = string.Empty;
+
+        error = string.Empty;
+
+        productos =
+            await ProductoService.ObtenerProductos();
+    }
+
+
+    private void NuevoProducto()
+    {
+        productoEditando = false;
+
+        productoForm = new Producto
+        {
+            activo = true,
+            tarifa_iva = 15
+        };
+
+        mostrarFormulario = true;
+    }
+
+
+    private void EditarProducto(Producto producto)
+    {
+        productoEditando = true;
+
+        productoForm = new Producto
+        {
+            id_producto = producto.id_producto,
+            codigo_principal = producto.codigo_principal,
+            nombre = producto.nombre,
+            precio_unitario = producto.precio_unitario,
+            stock = producto.stock,
+            tarifa_iva = producto.tarifa_iva,
+            id_categoria = producto.id_categoria,
+            activo = producto.activo
+        };
+
+        mostrarFormulario = true;
+    }
+
+
+    private void CerrarFormulario()
+    {
+        mostrarFormulario = false;
+    }
+
+
+    private async Task GuardarProducto()
+    {
+        try
+        {
+            error = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(
+                productoForm.nombre))
+            {
+                error =
+                    "Ingrese el nombre del producto.";
+
+                return;
+            }
+
+            if (productoEditando)
+            {
+                await ProductoService.ActualizarProducto(
+                    productoForm.id_producto,
+                    productoForm);
+            }
+            else
+            {
+                await ProductoService.CrearProducto(
+                    productoForm);
+            }
+
+            mostrarFormulario = false;
+
+            await CargarDatos();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al guardar el producto: {ex.Message}";
+        }
+    }
+
+
+    private async Task DesactivarProducto(
+        Producto producto)
+    {
+        try
+        {
+            await ProductoService.DesactivarProducto(
+                producto.id_producto);
+
+            await CargarDatos();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al desactivar: {ex.Message}";
+        }
+    }
+
+
+    private string ObtenerNombreCategoria(
+        int? idCategoria)
+    {
+        if (idCategoria == null)
+            return "Sin categoría";
+
+        var categoria =
+            categorias.FirstOrDefault(
+                x => x.id_categoria == idCategoria);
+
+        return categoria?.nombre ?? "Sin categoría";
+    }
+
+}
+

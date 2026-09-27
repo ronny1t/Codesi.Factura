@@ -37,26 +37,12 @@ namespace Codesi.Factura.Api.Controllers
             return Ok(producto);
         }
 
-        // GET: api/Productos/codigo/ABC123
-        [HttpGet("codigo/{codigo}")]
-        public IActionResult ObtenerPorCodigo(string codigo)
-        {
-            var producto = _service.ObtenerPorCodigo(codigo);
-
-            if (producto == null)
-                return NotFound(new
-                {
-                    mensaje = "Producto no encontrado"
-                });
-
-            return Ok(producto);
-        }
-
         // GET: api/Productos/buscar/whisky
-        [HttpGet("buscar/{nombre}")]
-        public IActionResult BuscarPorNombre(string nombre)
+        // Busca por nombre o código
+        [HttpGet("buscar/{texto}")]
+        public IActionResult Buscar(string texto)
         {
-            return Ok(_service.BuscarPorNombre(nombre));
+            return Ok(_service.Buscar(texto));
         }
 
         // POST: api/Productos
