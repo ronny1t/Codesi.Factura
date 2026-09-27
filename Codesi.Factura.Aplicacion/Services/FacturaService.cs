@@ -15,15 +15,15 @@ namespace Codesi.Factura.Aplicacion.Services
         public async Task<List<Codesi.Factura.Aplicacion.Models.Factura>> ObtenerFacturas()
         {
             return await _api.GetListAsync<Codesi.Factura.Aplicacion.Models.Factura>(
-                "Facturas"
+                "api/Facturas"
             );
         }
 
-        // Obtener una factura completa
+        // Obtener factura por ID
         public async Task<Codesi.Factura.Aplicacion.Models.Factura?> ObtenerFacturaPorId(int id)
         {
             return await _api.GetAsync<Codesi.Factura.Aplicacion.Models.Factura>(
-                $"Facturas/{id}"
+                $"api/Facturas/{id}"
             );
         }
 
@@ -32,56 +32,84 @@ namespace Codesi.Factura.Aplicacion.Services
             Codesi.Factura.Aplicacion.Models.Factura factura)
         {
             return await _api.PostAsync<Codesi.Factura.Aplicacion.Models.Factura>(
-                "Facturas",
+                "api/Facturas",
                 factura
+            );
+        }
+        // Actualizar factura completa
+        public async Task ActualizarFactura(
+            int id,
+            Codesi.Factura.Aplicacion.Models.Factura factura,
+            List<FacturaDetalle> detalles,
+            string formaPago,
+            decimal totalPago)
+        {
+            var request = new
+            {
+                id_cliente = factura.id_cliente,
+                fecha_emision = factura.fecha_emision,
+                subtotal_sin_impuestos =
+                    factura.subtotal_sin_impuestos,
+                total_descuento =
+                    factura.total_descuento,
+                subtotal_iva =
+                    factura.subtotal_iva,
+                propina =
+                    factura.propina,
+                importe_total =
+                    factura.importe_total,
+
+                detalles = detalles,
+
+                forma_pago = formaPago,
+                total_pago = totalPago
+            };
+
+            await _api.PutAsync<object>(
+                $"api/Facturas/{id}",
+                request
             );
         }
 
         // Actualizar estado SRI
-        public async Task ActualizarEstado(
-            int id,
-            string estado)
+        public async Task ActualizarEstado(int id, string estado)
         {
             await _api.PutAsync<object>(
-                $"Facturas/{id}/estado/{Uri.EscapeDataString(estado)}",
+                $"api/Facturas/{id}/estado/{Uri.EscapeDataString(estado)}",
                 new { }
             );
         }
 
         // Obtener detalles
-        public async Task<List<FacturaDetalle>> ObtenerDetalles(
-            int idFactura)
+        public async Task<List<FacturaDetalle>> ObtenerDetalles(int idFactura)
         {
             return await _api.GetListAsync<FacturaDetalle>(
-                $"FacturaDetalles/factura/{idFactura}"
+                $"api/FacturaDetalles/factura/{idFactura}"
             );
         }
 
-        // Agregar detalle
-        public async Task<FacturaDetalle?> CrearDetalle(
-            FacturaDetalle detalle)
+        // Crear detalle
+        public async Task<FacturaDetalle?> CrearDetalle(FacturaDetalle detalle)
         {
             return await _api.PostAsync<FacturaDetalle>(
-                "FacturaDetalles",
+                "api/FacturaDetalles",
                 detalle
             );
         }
 
         // Obtener pagos
-        public async Task<List<FacturaPago>> ObtenerPagos(
-            int idFactura)
+        public async Task<List<FacturaPago>> ObtenerPagos(int idFactura)
         {
             return await _api.GetListAsync<FacturaPago>(
-                $"FacturaPagos/factura/{idFactura}"
+                $"api/FacturaPagos/factura/{idFactura}"
             );
         }
 
-        // Agregar pago
-        public async Task<FacturaPago?> CrearPago(
-            FacturaPago pago)
+        // Crear pago
+        public async Task<FacturaPago?> CrearPago(FacturaPago pago)
         {
             return await _api.PostAsync<FacturaPago>(
-                "FacturaPagos",
+                "api/FacturaPagos",
                 pago
             );
         }

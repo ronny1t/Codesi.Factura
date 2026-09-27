@@ -1,7 +1,299 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Sistema de Facturación</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-container">
 
-Welcome to your new app.
+    <div class="home-content">
+
+        <div class="home-icon">
+            🧾
+        </div>
+
+        <span class="home-label">
+            SISTEMA DE FACTURACIÓN
+        </span>
+
+        <h1>
+            Gestión de Facturación
+        </h1>
+
+        <p>
+            Administra de manera sencilla y organizada
+            tus facturas, clientes y productos desde
+            una sola plataforma.
+        </p>
+
+        <div class="home-actions">
+
+            <a href="/facturas" class="btn-primary">
+                <span>📄</span>
+                Gestionar facturas
+            </a>
+
+            <a href="/productos" class="btn-secondary">
+                <span>📦</span>
+                Ver productos
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="features">
+
+        <div class="feature">
+
+            <div class="feature-icon">
+                📄
+            </div>
+
+            <div>
+                <h3>
+                    Facturación
+                </h3>
+
+                <p>
+                    Crea, consulta y administra
+                    tus facturas.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="feature">
+
+            <div class="feature-icon">
+                👥
+            </div>
+
+            <div>
+                <h3>
+                    Clientes
+                </h3>
+
+                <p>
+                    Gestiona la información
+                    de tus clientes.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="feature">
+
+            <div class="feature-icon">
+                📦
+            </div>
+
+            <div>
+                <h3>
+                    Productos
+                </h3>
+
+                <p>
+                    Administra productos,
+                    precios y stock.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+    .home-container {
+        min-height: 100vh;
+        padding: 40px;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+    }
+
+
+    .home-content {
+        width: 100%;
+        max-width: 800px;
+        text-align: center;
+    }
+
+
+    .home-icon {
+        width: 82px;
+        height: 82px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 22px;
+        background: #dbeafe;
+        font-size: 40px;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, .10);
+    }
+
+
+    .home-label {
+        display: inline-block;
+        margin-bottom: 10px;
+        color: #2563eb;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .14em;
+    }
+
+
+    .home-content h1 {
+        margin: 0;
+        color: #172033;
+        font-size: 42px;
+        font-weight: 750;
+    }
+
+
+    .home-content > p {
+        max-width: 620px;
+        margin: 16px auto 0;
+        color: #64748b;
+        font-size: 16px;
+        line-height: 1.7;
+    }
+
+
+    .home-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 28px;
+    }
+
+
+        .home-actions a {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 13px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            transition: .2s;
+        }
+
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+
+    .btn-secondary {
+        background: white;
+        color: #334155;
+        border: 1px solid #dbe2ea;
+    }
+
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+
+    .features {
+        width: 100%;
+        max-width: 1000px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+        margin-top: 55px;
+    }
+
+
+    .feature {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        transition: .2s;
+    }
+
+
+        .feature:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, .06);
+        }
+
+
+    .feature-icon {
+        width: 45px;
+        height: 45px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        background: #eff6ff;
+        font-size: 21px;
+    }
+
+
+    .feature h3 {
+        margin: 0;
+        color: #172033;
+        font-size: 14px;
+    }
+
+
+    .feature p {
+        margin: 5px 0 0;
+        color: #94a3b8;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+
+    @@media (max-width: 750px) {
+
+        .home-container {
+            padding: 25px 18px;
+        }
+
+        .home-content h1 {
+            font-size: 32px;
+        }
+
+        .home-actions {
+            flex-direction: column;
+        }
+
+            .home-actions a {
+                justify-content: center;
+            }
+
+        .features {
+            grid-template-columns: 1fr;
+            margin-top: 35px;
+        }
+    }
+
+</style>
+

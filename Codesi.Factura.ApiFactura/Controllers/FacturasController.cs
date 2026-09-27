@@ -1,6 +1,7 @@
 ﻿using Codesi.Factura.Api.Services;
 using Codesi.Factura.Persistencia.Models;
 using Microsoft.AspNetCore.Mvc;
+using Codesi.Factura.Api.Models;
 
 namespace Codesi.Factura.Api.Controllers
 {
@@ -58,6 +59,78 @@ namespace Codesi.Factura.Api.Controllers
             {
                 mensaje = "Estado actualizado correctamente"
             });
+        }
+
+        // PUT: api/Facturas/5
+        [HttpPut("{id}")]
+        public IActionResult ActualizarFactura(
+            int id,
+            [FromBody] FacturaActualizarRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var factura =
+                    _service.ObtenerFacturaPorId(id);
+
+                if (factura == null)
+                {
+                    return NotFound(new
+                    {
+                        mensaje = "Factura no encontrada"
+                    });
+                }
+
+                if (!string.Equals(
+                        factura.estado_sri,
+                        "CREADA",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return Conflict(new
+                    {
+                        mensaje =
+                            "Solo se pueden editar facturas en estado CREADA."
+                    });
+                }
+
+                _service.ActualizarFactura(
+                    id,
+                    request
+                );
+
+                return Ok(new
+                {
+                    mensaje =
+                        "Factura actualizada correctamente"
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new
+                {
+                    mensaje = ex.Message
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new
+                {
+                    mensaje = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "No se pudo actualizar la factura.",
+                    detalle = ex.Message,
+                    inner = ex.InnerException?.Message
+                });
+            }
         }
     }
 }

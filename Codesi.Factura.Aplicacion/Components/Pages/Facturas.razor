@@ -1,290 +1,841 @@
 ﻿@page "/facturas"
-
+@rendermode InteractiveServer
 @using Codesi.Factura.Aplicacion.Models
 @using Codesi.Factura.Aplicacion.Services
 
 @inject FacturaService FacturaService
+@inject ClienteApiService ClienteApiService
+@inject ProductoService ProductoService
 
 <PageTitle>Facturas</PageTitle>
 
-<div class="container mt-4">
+<div class="facturas-page">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>
-            <i class="bi bi-receipt"></i>
-            Facturas
-        </h3>
+    <!-- =====================================================
+         ENCABEZADO
+         ===================================================== -->
 
-        <button class="btn btn-primary" @onclick="CargarFacturas">
-            🔄 Actualizar
-        </button>
+    <div class="page-header">
+
+        <div>
+            <h1>Facturas</h1>
+
+            <p>
+                Gestión de facturas y comprobantes registrados
+            </p>
+        </div>
+
+        <div class="header-actions">
+
+            <button class="btn-refresh"
+                    @onclick="CargarFacturas"
+                    disabled="@cargando">
+
+                @if (cargando)
+                {
+                    <span class="small-loader"></span>
+                }
+                else
+                {
+                    <span>↻</span>
+                }
+
+                Actualizar
+
+            </button>
+
+            <button class="btn-new"
+                    @onclick="AbrirNuevaFactura">
+
+                <span>+</span>
+
+                Nueva factura
+
+            </button>
+
+        </div>
+
     </div>
 
+
+    <!-- =====================================================
+         ERROR
+         ===================================================== -->
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert-error">
+
+            <span class="alert-icon">!</span>
+
+            <span>@error</span>
+
+            <button @onclick="() => error = null">
+                ×
+            </button>
+
+        </div>
+    }
+
+
+    <!-- =====================================================
+         ESTADÍSTICAS
+         ===================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-icon blue">
+                📄
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    Total facturas
+                </span>
+
+                <strong>
+                    @facturas.Count
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon green">
+                ✓
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    Autorizadas
+                </span>
+
+                <strong>
+                    @facturas.Count(EsAutorizada)
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon orange">
+                ⏳
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    Pendientes
+                </span>
+
+                <strong>
+                    @facturas.Count(f =>
+                        string.Equals(
+                            f.estado_sri,
+                            "PENDIENTE",
+                            StringComparison.OrdinalIgnoreCase))
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon purple">
+                $
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    Total vendido
+                </span>
+
+                <strong>
+                    @facturas.Sum(f => f.importe_total).ToString("C2")
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         BÚSQUEDA
+         ===================================================== -->
+
+    <div class="search-container">
+
+        <div class="search-box">
+
+            <span class="search-icon">
+                🔍
+            </span>
+
+            <input type="text"
+                   placeholder="Buscar por factura, cliente o estado..."
+                   value="@textoBusqueda"
+                   @oninput="BuscarFacturas" />
+
+            @if (!string.IsNullOrWhiteSpace(textoBusqueda))
+            {
+                <button class="clear-search"
+                        @onclick="LimpiarBusqueda">
+                    ×
+                </button>
+            }
+
+        </div>
+
+        <span class="results-count">
+            @facturasFiltradas.Count factura(s)
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         LISTADO
+         ===================================================== -->
     @if (cargando)
     {
-        <div class="text-center mt-5">
-            <div class="spinner-border" role="status"></div>
-            <p class="mt-2">Cargando facturas...</p>
+        <div class="loading-container">
+
+            <div class="loader"></div>
+
+            <p>
+                Cargando facturas...
+            </p>
+
         </div>
     }
-    else if (!string.IsNullOrEmpty(error))
+    else if (facturasFiltradas.Count == 0)
     {
-        <div class="alert alert-danger">
-            @error
-        </div>
-    }
-    else if (facturas.Count == 0)
-    {
-        <div class="alert alert-info">
-            No existen facturas registradas.
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                📄
+            </div>
+
+            <h3>
+                No existen facturas
+            </h3>
+
+            <p>
+                Todavía no hay facturas registradas en el sistema.
+            </p>
+
+            <button class="btn-new"
+                    @onclick="AbrirNuevaFactura">
+
+                <span>+</span>
+
+                Crear primera factura
+
+            </button>
+
         </div>
     }
     else
     {
-        <div class="table-responsive">
+        <div class="table-card">
 
-            <table class="table table-hover table-bordered">
+            <div class="table-wrapper">
 
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Fecha</th>
-                        <th>Estado SRI</th>
-                        <th>Total</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
+                <table class="facturas-table">
 
-                <tbody>
+                    <thead>
 
-                    @foreach (var factura in facturas)
-                    {
                         <tr>
 
-                            <td>
-                                @factura.id_factura
-                            </td>
+                            <th>
+                                Factura
+                            </th>
 
-                            <td>
-                                @factura.id_cliente
-                            </td>
+                            <th>
+                                Cliente
+                            </th>
 
-                            <td>
-                                @(factura.fecha_emision?.ToString("dd/MM/yyyy HH:mm")
-                                    ?? "Sin fecha")
-                            </td>
+                            <th>
+                                Fecha
+                            </th>
 
-                            <td>
-                                @if (factura.estado_sri == "AUTORIZADA")
-                                {
-                                    <span class="badge bg-success">
-                                        AUTORIZADA
-                                    </span>
-                                }
-                                else if (factura.estado_sri == "RECHAZADA")
-                                {
-                                    <span class="badge bg-danger">
-                                        RECHAZADA
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">
-                                        @(factura.estado_sri ?? "PENDIENTE")
-                                    </span>
-                                }
-                            </td>
+                            <th>
+                                Total
+                            </th>
 
-                            <td>
-                                $@factura.importe_total.ToString("N2")
-                            </td>
+                            <th>
+                                Estado
+                            </th>
 
-                            <td>
-
-                                <button class="btn btn-sm btn-info me-1"
-                                        @onclick="() => VerFactura(factura.id_factura)">
-                                    Ver
-                                </button>
-
-                                <button class="btn btn-sm btn-success"
-                                        @onclick="() => AutorizarFactura(factura.id_factura)">
-                                    Autorizar
-                                </button>
-
-                            </td>
+                            <th>
+                                Acciones
+                            </th>
 
                         </tr>
-                    }
 
-                </tbody>
+                    </thead>
 
-            </table>
+                    <tbody>
+
+                        @foreach (var factura in facturasFiltradas)
+                        {
+                            <tr>
+
+                                <td>
+
+                                    <div class="invoice-number">
+
+                                        <div class="invoice-icon">
+                                            #
+                                        </div>
+
+                                        <div>
+
+                                            <strong>
+                                                @factura.id_factura
+                                            </strong>
+
+                                            @if (!string.IsNullOrWhiteSpace(
+                                                factura.secuencial))
+                                            {
+                                                <small>
+                                                    @factura.establecimiento-
+                                                    @factura.punto_emision-
+                                                    @factura.secuencial
+                                                </small>
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="client-cell">
+
+                                        <div class="client-avatar">
+                                            @ObtenerInicialCliente(
+                                                factura.id_cliente)
+                                        </div>
+
+                                        <span>
+                                            Cliente #@factura.id_cliente
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="date-cell">
+
+                                        <strong>
+                                            @factura.fecha_emision.ToString("dd/MM/yyyy")
+                                        </strong>
+
+                                        <small>
+                                            @factura.fecha_emision.ToString("HH:mm")
+                                        </small>
+
+                                    </div>
+
+                                </td>
+
+
+                                <td>
+
+                                    <strong class="amount">
+                                        @factura.importe_total.ToString("C2")
+                                    </strong>
+
+                                </td>
+
+
+                                <td>
+
+                                    @RenderEstado(factura.estado_sri)
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="actions">
+
+                                        <!-- VER -->
+
+                                        <button class="btn-action view"
+                                                title="Ver factura"
+                                                @onclick="() => VerFactura(
+                                                                                                factura.id_factura)">
+
+👁
+
+</button>
+
+
+                                        <!-- EDITAR -->
+                                        @if (EsEditable(factura))
+                                        {
+                                            <button class="btn-action edit"
+                                                    title="Editar factura"
+                                                    @onclick="() => AbrirEditarFactura(
+                                                                                                        factura.id_factura)">
+
+✏️
+
+</button>
+                                        }
+
+
+                                        <!-- AUTORIZAR -->
+                                        @if (!EsAutorizada(factura))
+                                        {
+                                            <button class="btn-action authorize"
+                                                    title="Autorizar"
+                                                    @onclick="() => AutorizarFactura(
+                                                                                                        factura.id_factura)">
+
+✓
+
+</button>
+                                        }
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
 
         </div>
     }
 
-</div>
 
-@if (mostrarDetalle && facturaSeleccionada != null)
-{
-    <div class="modal fade show d-block"
-         tabindex="-1"
-         style="background-color: rgba(0,0,0,0.5);">
+    <!-- =====================================================
+         MODAL NUEVA / EDITAR FACTURA
+         ===================================================== -->
+    @if (mostrarNuevaFactura)
+    {
+        <div class="modal-overlay">
 
-        <div class="modal-dialog modal-lg">
-
-            <div class="modal-content">
+            <div class="modal modal-large">
 
                 <div class="modal-header">
 
-                    <h5 class="modal-title">
-                        Factura #@facturaSeleccionada.id_factura
-                    </h5>
+                    <div>
 
-                    <button type="button"
-                            class="btn-close"
-                            @onclick="CerrarDetalle">
+                        <h2>
+                            @(modoEdicion
+                                ? $"Editar factura #{idFacturaEditando}"
+                                : "Nueva factura")
+                        </h2>
+
+                        <p>
+                            @(modoEdicion
+                                ? "Modifica los datos de la factura"
+                                : "Registra una nueva venta")
+                        </p>
+
+                    </div>
+
+                    <button class="modal-close"
+                            @onclick="CerrarNuevaFactura"
+                            disabled="@guardandoFactura">
+
+                        ×
+
                     </button>
 
                 </div>
 
+
                 <div class="modal-body">
 
-                    <div class="row mb-3">
+                    <!-- =================================================
+                         CLIENTE
+                         ================================================= -->
 
-                        <div class="col-md-6">
-                            <strong>Cliente:</strong>
-                            @facturaSeleccionada.id_cliente
-                        </div>
+                    <div class="form-section">
 
-                        <div class="col-md-6">
-                            <strong>Fecha:</strong>
-                            @(facturaSeleccionada.fecha_emision?
-                                .ToString("dd/MM/yyyy HH:mm")
-                                ?? "Sin fecha")
+                        <h3>
+                            Información del cliente
+                        </h3>
+
+                        <div class="form-group">
+
+                            <label>
+                                Cliente
+                            </label>
+
+                            <select class="form-control"
+                                    @bind="idClienteSeleccionado">
+
+                                <option value="0">
+                                    Seleccione un cliente
+                                </option>
+
+                                @foreach (var cliente in clientes)
+                                {
+                                    <option value="@cliente.id_cliente">
+
+                                        @cliente.identificacion -
+                                        @cliente.razon_social
+
+                                    </option>
+                                }
+
+                            </select>
+
                         </div>
 
                     </div>
 
-                    <hr />
 
-                    <h5>Detalles</h5>
+                    <!-- =================================================
+                         PRODUCTOS
+                         ================================================= -->
 
-                    @if (detalles.Count == 0)
-                    {
-                        <p>No existen detalles para esta factura.</p>
-                    }
-                    else
-                    {
-                        <table class="table table-sm table-bordered">
+                    <div class="form-section">
 
-                            <thead>
-                                <tr>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Precio</th>
-                                    <th>Subtotal</th>
-                                    <th>IVA</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
+                        <h3>
+                            Productos
+                        </h3>
 
-                            <tbody>
+                        <div class="product-search">
 
-                                @foreach (var detalle in detalles)
-                                {
-                                    <tr>
+                            <div class="search-box">
 
-                                        <td>
-                                            @detalle.id_producto
-                                        </td>
+                                <span class="search-icon">
+                                    🔍
+                                </span>
 
-                                        <td>
-                                            @detalle.cantidad
-                                        </td>
+                                <input type="text"
+                                       placeholder="Buscar por nombre o código..."
+                                       value="@textoProducto"
+                                       @oninput="BuscarProductos" />
 
-                                        <td>
-                                            $@detalle.precio_unitario.ToString("N2")
-                                        </td>
+                            </div>
 
-                                        <td>
-                                            $@detalle.subtotal.ToString("N2")
-                                        </td>
 
-                                        <td>
-                                            $@detalle.valor_iva.ToString("N2")
-                                        </td>
+                            @if (productosBuscados.Count > 0)
+                            {
+                                <div class="product-results">
 
-                                        <td>
-                                            $@detalle.total.ToString("N2")
-                                        </td>
+                                    @foreach (var producto in productosBuscados)
+                                    {
+                                        <button class="product-result"
+                                                @onclick="() => AgregarProducto(producto)">
 
-                                    </tr>
-                                }
+                                            <div class="product-info">
 
-                            </tbody>
+                                                <strong>
+                                                    @producto.nombre
+                                                </strong>
 
-                        </table>
-                    }
+                                                <small>
+                                                    Código:
+                                                    @(producto.codigo_principal ?? "Sin código")
+                                                </small>
 
-                    <hr />
+                                            </div>
 
-                    <h5>Pagos</h5>
+                                            <div class="product-price">
 
-                    @if (pagos.Count == 0)
-                    {
-                        <p>No existen pagos registrados.</p>
-                    }
-                    else
-                    {
-                        <table class="table table-sm table-bordered">
+                                                <strong>
+                                                    @producto.precio_unitario.ToString("C2")
+                                                </strong>
 
-                            <thead>
-                                <tr>
-                                    <th>Forma de pago</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
+                                                <small>
+                                                    Stock:
+                                                    @producto.stock
+                                                </small>
 
-                            <tbody>
+                                            </div>
 
-                                @foreach (var pago in pagos)
-                                {
-                                    <tr>
+                                        </button>
+                                    }
 
-                                        <td>
-                                            @pago.forma_pago
-                                        </td>
+                                </div>
+                            }
 
-                                        <td>
-                                            $@pago.total.ToString("N2")
-                                        </td>
+                        </div>
 
-                                    </tr>
-                                }
 
-                            </tbody>
+                        @if (detalleFactura.Count == 0)
+                        {
+                            <div class="products-empty">
 
-                        </table>
-                    }
+                                <span>
+                                    🛒
+                                </span>
 
-                    <div class="text-end mt-3">
+                                <p>
+                                    Agrega productos a la factura
+                                </p>
 
-                        <h4>
-                            Total:
-                            $@facturaSeleccionada.importe_total.ToString("N2")
-                        </h4>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="detail-table-wrapper">
+
+                                <table class="detail-table">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th>
+                                                Producto
+                                            </th>
+
+                                            <th>
+                                                Precio
+                                            </th>
+
+                                            <th>
+                                                Cantidad
+                                            </th>
+
+                                            <th>
+                                                IVA
+                                            </th>
+
+                                            <th>
+                                                Total
+                                            </th>
+
+                                            <th>
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @foreach (var item in detalleFactura)
+                                        {
+                                            <tr>
+
+                                                <td>
+
+                                                    <strong>
+                                                        @ObtenerNombreProducto(
+                                                            item.id_producto)
+                                                    </strong>
+
+                                                </td>
+
+
+                                                <td>
+                                                    @item.precio_unitario.ToString("C2")
+                                                </td>
+
+
+                                                <td>
+
+                                                    <input type="number"
+                                                           class="quantity-input"
+                                                           min="1"
+                                                           value="@item.cantidad"
+                                                           @onchange="(e) => CambiarCantidad(item, e)" />
+
+                                                </td>
+
+
+                                                <td>
+                                                    @item.valor_iva.ToString("C2")
+                                                </td>
+
+
+                                                <td>
+
+                                                    <strong>
+                                                        @item.total.ToString("C2")
+                                                    </strong>
+
+                                                </td>
+
+
+                                                <td>
+
+                                                    <button class="btn-remove"
+                                                            title="Eliminar"
+                                                            @onclick="() => EliminarProducto(item)">
+
+                                                        ×
+
+                                                    </button>
+
+                                                </td>
+
+                                            </tr>
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+                        }
+
+                    </div>
+
+
+                    <!-- =================================================
+                         PAGO
+                         ================================================= -->
+
+                    <div class="form-section">
+
+                        <h3>
+                            Forma de pago
+                        </h3>
+
+                        <div class="form-group">
+
+                            <label>
+                                Método de pago
+                            </label>
+
+                            <select class="form-control"
+                                    @bind="formaPago">
+
+                                <option value="">
+                                    Seleccione una forma de pago
+                                </option>
+
+                                <option value="EFECTIVO">
+                                    Efectivo
+                                </option>
+
+                                <option value="TARJETA">
+                                    Tarjeta
+                                </option>
+
+                                <option value="TRANSFERENCIA">
+                                    Transferencia
+                                </option>
+
+                                <option value="DEPOSITO">
+                                    Depósito
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         RESUMEN
+                         ================================================= -->
+
+                    <div class="invoice-summary">
+
+                        <div class="summary-row">
+
+                            <span>
+                                Subtotal
+                            </span>
+
+                            <strong>
+                                @Subtotal.ToString("C2")
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-row">
+
+                            <span>
+                                IVA
+                            </span>
+
+                            <strong>
+                                @IvaTotal.ToString("C2")
+                            </strong>
+
+                        </div>
+
+
+                        <div class="summary-total">
+
+                            <span>
+                                Total
+                            </span>
+
+                            <strong>
+                                @TotalFactura.ToString("C2")
+                            </strong>
+
+                        </div>
 
                     </div>
 
                 </div>
 
+
+                <!-- =================================================
+                     FOOTER
+                     ================================================= -->
+
                 <div class="modal-footer">
 
-                    <button class="btn btn-secondary"
-                            @onclick="CerrarDetalle">
-                        Cerrar
+                    <button class="btn-modal-secondary"
+                            @onclick="CerrarNuevaFactura"
+                            disabled="@guardandoFactura">
+
+                        Cancelar
+
+                    </button>
+
+
+                    <button class="btn-create"
+                            @onclick="GuardarFactura"
+                            disabled="@guardandoFactura">
+
+                        @if (guardandoFactura)
+                        {
+                            <span class="small-loader"></span>
+
+                            <span>
+                                Guardando...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                ✓
+                            </span>
+
+                            <span>
+                                @(modoEdicion
+                                    ? "Guardar cambios"
+                                    : "Crear factura")
+                            </span>
+                        }
+
                     </button>
 
                 </div>
@@ -292,15 +843,1094 @@
             </div>
 
         </div>
+    }
 
-    </div>
-}
+
+    <!-- =====================================================
+         MODAL DETALLE FACTURA
+         ===================================================== -->
+    @if (mostrarDetalle && facturaSeleccionada != null)
+    {
+        <div class="modal-overlay">
+
+            <div class="modal modal-large">
+
+                <div class="modal-header">
+
+                    <div>
+
+                        <h2>
+                            Factura #@facturaSeleccionada.id_factura
+                        </h2>
+
+                        <p>
+                            Detalle de la factura
+                        </p>
+
+                    </div>
+
+                    <button class="modal-close"
+                            @onclick="CerrarDetalle">
+
+                        ×
+
+                    </button>
+
+                </div>
+
+
+                <div class="modal-body">
+
+                    <!-- INFORMACIÓN -->
+
+                    <div class="invoice-info-grid">
+
+                        <div class="info-item">
+
+                            <span>
+                                Cliente
+                            </span>
+
+                            <strong>
+                                Cliente #@facturaSeleccionada.id_cliente
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-item">
+
+                            <span>
+                                Fecha
+                            </span>
+
+                            <strong>
+                                @facturaSeleccionada.fecha_emision.ToString(
+                                    "dd/MM/yyyy HH:mm")
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-item">
+
+                            <span>
+                                Estado
+                            </span>
+
+                            @RenderEstado(
+                                facturaSeleccionada.estado_sri)
+
+                        </div>
+
+
+                        <div class="info-item">
+
+                            <span>
+                                Total
+                            </span>
+
+                            <strong class="detail-total">
+                                @facturaSeleccionada.importe_total.ToString("C2")
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- DETALLES -->
+
+                    <div class="form-section">
+
+                        <h3>
+                            Productos facturados
+                        </h3>
+
+                        @if (detalles.Count == 0)
+                        {
+                            <div class="details-empty">
+
+                                No existen detalles registrados.
+
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="detail-table-wrapper">
+
+                                <table class="detail-table">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th>
+                                                Producto
+                                            </th>
+
+                                            <th>
+                                                Cantidad
+                                            </th>
+
+                                            <th>
+                                                Precio
+                                            </th>
+
+                                            <th>
+                                                Subtotal
+                                            </th>
+
+                                            <th>
+                                                IVA
+                                            </th>
+
+                                            <th>
+                                                Total
+                                            </th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody>
+
+                                        @foreach (var detalle in detalles)
+                                        {
+                                            <tr>
+
+                                                <td>
+                                                    @ObtenerNombreProducto(
+                                                        detalle.id_producto)
+                                                </td>
+
+                                                <td>
+                                                    @detalle.cantidad
+                                                </td>
+
+                                                <td>
+                                                    @detalle.precio_unitario.ToString("C2")
+                                                </td>
+
+                                                <td>
+                                                    @detalle.subtotal.ToString("C2")
+                                                </td>
+
+                                                <td>
+                                                    @detalle.valor_iva.ToString("C2")
+                                                </td>
+
+                                                <td>
+                                                    <strong>
+                                                        @detalle.total.ToString("C2")
+                                                    </strong>
+                                                </td>
+
+                                            </tr>
+                                        }
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+                        }
+
+                    </div>
+
+
+                    <!-- PAGOS -->
+
+                    <div class="form-section">
+
+                        <h3>
+                            Pagos
+                        </h3>
+
+                        @if (pagos.Count == 0)
+                        {
+                            <div class="details-empty">
+
+                                No existen pagos registrados.
+
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="payment-list">
+
+                                @foreach (var pago in pagos)
+                                {
+                                    <div class="payment-item">
+
+                                        <div>
+
+                                            <strong>
+                                                @pago.forma_pago
+                                            </strong>
+
+                                            <small>
+                                                Pago registrado
+                                            </small>
+
+                                        </div>
+
+                                        <strong>
+                                            @pago.total.ToString("C2")
+                                        </strong>
+
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- FOOTER DETALLE -->
+
+                <div class="modal-footer">
+
+                    <button class="btn-modal-secondary"
+                            @onclick="CerrarDetalle">
+
+                        Cerrar
+
+                    </button>
+
+
+                    @if (EsEditable(facturaSeleccionada))
+                    {
+                        <button class="btn-create"
+                                @onclick="() => AbrirEditarFactura(
+                                                                facturaSeleccionada.id_factura)">
+
+✏️
+
+                            Editar factura
+
+</button>
+                    }
+
+
+                    @if (!EsAutorizada(facturaSeleccionada))
+                    {
+                        <button class="btn-create"
+                                @onclick="() => AutorizarFactura(
+                                                                facturaSeleccionada.id_factura)">
+
+✓
+
+                            Autorizar factura
+
+</button>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+<!-- =========================================================
+     ESTILOS
+     ========================================================= -->
+
+<style>
+
+    .facturas-page {
+        padding: 28px;
+        background: #f8fafc;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 700;
+            color: #172033;
+        }
+
+        .page-header p {
+            margin: 6px 0 0;
+            color: #64748b;
+        }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    button {
+        border: none;
+        cursor: pointer;
+    }
+
+        button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+    .btn-refresh,
+    .btn-new,
+    .btn-create,
+    .btn-modal-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border-radius: 9px;
+        font-weight: 600;
+        transition: .2s;
+    }
+
+    .btn-refresh {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+    }
+
+        .btn-refresh:hover {
+            background: #f1f5f9;
+        }
+
+    .btn-new,
+    .btn-create {
+        background: #2563eb;
+        color: white;
+    }
+
+        .btn-new:hover,
+        .btn-create:hover {
+            background: #1d4ed8;
+        }
+
+    .alert-error {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+        .alert-error button {
+            margin-left: auto;
+            background: transparent;
+            font-size: 22px;
+            color: #991b1b;
+        }
+
+    .alert-icon {
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #dc2626;
+        color: white;
+        font-weight: bold;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 21px;
+    }
+
+        .stat-icon.blue {
+            background: #dbeafe;
+        }
+
+        .stat-icon.green {
+            background: #dcfce7;
+        }
+
+        .stat-icon.orange {
+            background: #ffedd5;
+        }
+
+        .stat-icon.purple {
+            background: #f3e8ff;
+        }
+
+    .stat-label {
+        display: block;
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 4px;
+    }
+
+    .stat-card strong {
+        font-size: 22px;
+        color: #172033;
+    }
+
+    .search-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 16px;
+    }
+
+    .search-box {
+        position: relative;
+        flex: 1;
+    }
+
+        .search-box input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 13px 42px;
+            border: 1px solid #dbe2ea;
+            border-radius: 10px;
+            background: white;
+            outline: none;
+            font-size: 14px;
+        }
+
+            .search-box input:focus {
+                border-color: #2563eb;
+                box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+            }
+
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        color: #64748b;
+        font-size: 20px;
+    }
+
+    .results-count {
+        color: #64748b;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .table-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .facturas-table,
+    .detail-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .facturas-table th,
+        .detail-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            text-align: left;
+            padding: 14px 18px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .facturas-table td,
+        .detail-table td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        .facturas-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+    .invoice-number,
+    .client-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .invoice-icon,
+    .client-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eff6ff;
+        color: #2563eb;
+        font-weight: 700;
+    }
+
+    .client-avatar {
+        border-radius: 50%;
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .invoice-number strong {
+        display: block;
+        color: #172033;
+    }
+
+    .invoice-number small,
+    .date-cell small,
+    .product-info small,
+    .product-price small,
+    .payment-item small {
+        display: block;
+        color: #94a3b8;
+        margin-top: 3px;
+        font-size: 12px;
+    }
+
+    .date-cell strong {
+        display: block;
+    }
+
+    .amount {
+        color: #172033;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .status-authorized {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-rejected {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-pending {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .status-other {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .actions {
+        display: flex;
+        gap: 7px;
+    }
+
+    .btn-action {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+        .btn-action:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-action.authorize {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .btn-action.edit {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+            .btn-action.edit:hover {
+                background: #fde68a;
+            }
+
+    .empty-state,
+    .loading-container {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 60px 20px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .empty-state h3 {
+        margin: 0 0 8px;
+        color: #172033;
+    }
+
+    .empty-state p,
+    .loading-container p {
+        color: #64748b;
+        margin-bottom: 20px;
+    }
+
+    .loader {
+        width: 38px;
+        height: 38px;
+        border: 4px solid #e2e8f0;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: auto;
+    }
+
+    .small-loader {
+        width: 15px;
+        height: 15px;
+        border: 2px solid rgba(255,255,255,.4);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 1000;
+    }
+
+    .modal {
+        width: 100%;
+        max-width: 600px;
+        max-height: 90vh;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 25px 60px rgba(15,23,42,.25);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .modal-large {
+        max-width: 1000px;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 22px 25px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #172033;
+        }
+
+        .modal-header p {
+            margin: 5px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+    .modal-close {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 23px;
+    }
+
+    .modal-body {
+        padding: 25px;
+        overflow-y: auto;
+    }
+
+    .form-section {
+        margin-bottom: 25px;
+    }
+
+        .form-section h3 {
+            margin: 0 0 14px;
+            color: #172033;
+            font-size: 17px;
+        }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 7px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 13px;
+        border: 1px solid #dbe2ea;
+        border-radius: 9px;
+        outline: none;
+        background: white;
+    }
+
+        .form-control:focus {
+            border-color: #2563eb;
+        }
+
+    .product-search {
+        position: relative;
+    }
+
+    .product-results {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 58px;
+        z-index: 20;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(15,23,42,.12);
+        overflow: hidden;
+    }
+
+    .product-result {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        padding: 13px 15px;
+        background: white;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+        .product-result:hover {
+            background: #f8fafc;
+        }
+
+    .product-info strong {
+        display: block;
+        color: #172033;
+    }
+
+    .product-price {
+        text-align: right;
+    }
+
+        .product-price strong {
+            display: block;
+            color: #2563eb;
+        }
+
+    .products-empty,
+    .details-empty {
+        padding: 30px;
+        text-align: center;
+        color: #94a3b8;
+        background: #f8fafc;
+        border-radius: 10px;
+    }
+
+        .products-empty span {
+            font-size: 30px;
+        }
+
+        .products-empty p {
+            margin: 8px 0 0;
+        }
+
+    .detail-table-wrapper {
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    .detail-table th {
+        padding: 11px 13px;
+    }
+
+    .detail-table td {
+        padding: 12px 13px;
+    }
+
+    .quantity-input {
+        width: 65px;
+        padding: 7px;
+        text-align: center;
+        border: 1px solid #dbe2ea;
+        border-radius: 7px;
+    }
+
+    .btn-remove {
+        width: 30px;
+        height: 30px;
+        border-radius: 7px;
+        background: #fee2e2;
+        color: #b91c1c;
+        font-size: 18px;
+    }
+
+    .invoice-summary {
+        margin-top: 20px;
+        margin-left: auto;
+        width: 330px;
+        max-width: 100%;
+        padding: 18px;
+        background: #f8fafc;
+        border-radius: 12px;
+    }
+
+    .summary-row,
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+    }
+
+    .summary-row {
+        color: #64748b;
+    }
+
+        .summary-row strong {
+            color: #334155;
+        }
+
+    .summary-total {
+        margin-top: 8px;
+        padding-top: 14px;
+        border-top: 1px solid #e2e8f0;
+        color: #172033;
+        font-size: 18px;
+    }
+
+        .summary-total strong {
+            color: #2563eb;
+            font-size: 21px;
+        }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 18px 25px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn-modal-secondary {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+        .btn-modal-secondary:hover {
+            background: #e2e8f0;
+        }
+
+    .invoice-info-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .info-item {
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 10px;
+    }
+
+        .info-item > span {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        .info-item strong {
+            color: #172033;
+        }
+
+    .detail-total {
+        color: #2563eb !important;
+    }
+
+    .payment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .payment-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 9px;
+    }
+
+        .payment-item strong {
+            color: #172033;
+        }
+
+    @@media (max-width: 900px) {
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .invoice-info-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 650px) {
+
+        .facturas-page {
+            padding: 15px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+            .header-actions button {
+                flex: 1;
+            }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .search-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .results-count {
+            text-align: right;
+        }
+
+        .invoice-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-overlay {
+            padding: 8px;
+        }
+
+        .modal-body {
+            padding: 18px;
+        }
+
+        .modal-header,
+        .modal-footer {
+            padding: 16px;
+        }
+    }
+
+</style>
+
 
 @code {
 
-    private List<Factura> facturas = new();
+    // =====================================================
+    // LISTADO
+    // =====================================================
 
-    private Factura? facturaSeleccionada;
+    private List<Codesi.Factura.Aplicacion.Models.Factura> facturas = new();
+
+    private List<Codesi.Factura.Aplicacion.Models.Factura> facturasFiltradas = new();
+
+    private Codesi.Factura.Aplicacion.Models.Factura? facturaSeleccionada;
 
     private List<FacturaDetalle> detalles = new();
 
@@ -312,10 +1942,62 @@
 
     private string? error;
 
+    private string textoBusqueda = string.Empty;
+
+
+    // =====================================================
+    // NUEVA / EDITAR FACTURA
+    // =====================================================
+
+    private bool mostrarNuevaFactura = false;
+
+    private bool guardandoFactura = false;
+
+    private bool modoEdicion = false;
+
+    private int idFacturaEditando = 0;
+
+    private DateTime fechaFacturaEditando = DateTime.Now;
+
+    private List<clientes> clientes = new();
+
+    private List<Producto> productos = new();
+
+    private List<Producto> productosBuscados = new();
+
+    private List<FacturaDetalle> detalleFactura = new();
+
+    private int idClienteSeleccionado = 0;
+
+    private string textoProducto = string.Empty;
+
+    private string formaPago = string.Empty;
+
+
+    // =====================================================
+    // INICIALIZACIÓN
+    // =====================================================
+
     protected override async Task OnInitializedAsync()
     {
         await CargarFacturas();
+
+        try
+        {
+            productos =
+                await ProductoService.ObtenerProductos();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al cargar los productos: {ex.Message}";
+        }
     }
+
+
+    // =====================================================
+    // CARGAR FACTURAS
+    // =====================================================
 
     private async Task CargarFacturas()
     {
@@ -324,11 +2006,15 @@
             cargando = true;
             error = null;
 
-            facturas = await FacturaService.ObtenerFacturas();
+            facturas =
+                await FacturaService.ObtenerFacturas();
+
+            AplicarBusqueda();
         }
         catch (Exception ex)
         {
-            error = $"Error al cargar las facturas: {ex.Message}";
+            error =
+                $"Error al cargar las facturas: {ex.Message}";
         }
         finally
         {
@@ -336,55 +2022,1194 @@
         }
     }
 
-    private async Task VerFactura(int id)
+
+    // =====================================================
+    // BÚSQUEDA DE FACTURAS
+    // =====================================================
+
+    private void BuscarFacturas(ChangeEventArgs e)
+    {
+        textoBusqueda =
+            e.Value?.ToString() ?? string.Empty;
+
+        AplicarBusqueda();
+    }
+
+
+    private void AplicarBusqueda()
+    {
+        if (string.IsNullOrWhiteSpace(textoBusqueda))
+        {
+            facturasFiltradas =
+                facturas.ToList();
+
+            return;
+        }
+
+        var texto =
+            textoBusqueda.Trim();
+
+        facturasFiltradas =
+            facturas
+                .Where(f =>
+                    f.id_factura
+                        .ToString()
+                        .Contains(
+                            texto,
+                            StringComparison.OrdinalIgnoreCase)
+
+                    ||
+
+                    f.id_cliente
+                        .ToString()
+                        .Contains(
+                            texto,
+                            StringComparison.OrdinalIgnoreCase)
+
+                    ||
+
+                    (
+                        !string.IsNullOrWhiteSpace(
+                            f.estado_sri)
+
+                        &&
+
+                        f.estado_sri.Contains(
+                            texto,
+                            StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                .ToList();
+    }
+
+
+    private void LimpiarBusqueda()
+    {
+        textoBusqueda = string.Empty;
+
+        facturasFiltradas =
+            facturas.ToList();
+    }
+
+
+    // =====================================================
+    // ABRIR NUEVA FACTURA
+    // =====================================================
+
+    private async Task AbrirNuevaFactura()
     {
         try
         {
-            facturaSeleccionada =
-                await FacturaService.ObtenerFacturaPorId(id);
+            error = null;
 
-            if (facturaSeleccionada == null)
+            modoEdicion = false;
+
+            idFacturaEditando = 0;
+
+            fechaFacturaEditando = DateTime.Now;
+
+            mostrarNuevaFactura = true;
+
+            idClienteSeleccionado = 0;
+
+            textoProducto = string.Empty;
+
+            formaPago = string.Empty;
+
+            detalleFactura.Clear();
+
+            productosBuscados.Clear();
+
+            if (clientes.Count == 0)
             {
-                error = "No se encontró la factura.";
-                return;
+                clientes =
+                    await ClienteApiService
+                        .ObtenerClientesAsync();
             }
 
-            detalles =
-                await FacturaService.ObtenerDetalles(id);
-
-            pagos =
-                await FacturaService.ObtenerPagos(id);
-
-            mostrarDetalle = true;
+            if (productos.Count == 0)
+            {
+                productos =
+                    await ProductoService
+                        .ObtenerProductos();
+            }
         }
         catch (Exception ex)
         {
-            error = $"Error al obtener la factura: {ex.Message}";
+            mostrarNuevaFactura = false;
+
+            error =
+                $"Error al cargar los datos para la factura: {ex.Message}";
         }
     }
 
-    private void CerrarDetalle()
+
+    // =====================================================
+    // CERRAR NUEVA / EDITAR
+    // =====================================================
+
+    private void CerrarNuevaFactura()
     {
-        mostrarDetalle = false;
-        facturaSeleccionada = null;
-        detalles.Clear();
-        pagos.Clear();
+        if (guardandoFactura)
+            return;
+
+        mostrarNuevaFactura = false;
+
+        modoEdicion = false;
+
+        idFacturaEditando = 0;
+
+        fechaFacturaEditando = DateTime.Now;
+
+        idClienteSeleccionado = 0;
+
+        textoProducto = string.Empty;
+
+        formaPago = string.Empty;
+
+        detalleFactura.Clear();
+
+        productosBuscados.Clear();
     }
 
-    private async Task AutorizarFactura(int id)
+
+    // =====================================================
+    // EDITAR FACTURA
+    // =====================================================
+
+    private async Task AbrirEditarFactura(int id)
     {
         try
         {
-            await FacturaService.ActualizarEstado(
-                id,
-                "AUTORIZADA"
-            );
+            error = null;
+
+            if (clientes.Count == 0)
+            {
+                clientes =
+                    await ClienteApiService
+                        .ObtenerClientesAsync();
+            }
+
+            if (productos.Count == 0)
+            {
+                productos =
+                    await ProductoService
+                        .ObtenerProductos();
+            }
+
+            var factura =
+                await FacturaService
+                    .ObtenerFacturaPorId(id);
+
+            if (factura == null)
+            {
+                error =
+                    "No se encontró la factura.";
+
+                return;
+            }
+
+            if (!EsEditable(factura))
+            {
+                error =
+                    "Esta factura no se puede editar porque ya no está en estado CREADA.";
+
+                return;
+            }
+
+            var detallesExistentes =
+                await FacturaService
+                    .ObtenerDetalles(id);
+
+            var pagosExistentes =
+                await FacturaService
+                    .ObtenerPagos(id);
+
+            idFacturaEditando = id;
+
+            fechaFacturaEditando =
+                factura.fecha_emision;
+
+            idClienteSeleccionado =
+                factura.id_cliente;
+
+            detalleFactura =
+                detallesExistentes
+                    .Select(d => new FacturaDetalle
+                    {
+                        id_detalle =
+                            d.id_detalle,
+
+                        id_factura =
+                            id,
+
+                        id_producto =
+                            d.id_producto,
+
+                        cantidad =
+                            d.cantidad,
+
+                        precio_unitario =
+                            d.precio_unitario,
+
+                        descuento =
+                            d.descuento,
+
+                        subtotal =
+                            d.subtotal,
+
+                        valor_iva =
+                            d.valor_iva,
+
+                        total =
+                            d.total
+                    })
+                    .ToList();
+
+            formaPago =
+                pagosExistentes
+                    .FirstOrDefault()
+                    ?.forma_pago
+                ?? string.Empty;
+
+            textoProducto = string.Empty;
+
+            productosBuscados.Clear();
+
+            modoEdicion = true;
+
+            mostrarDetalle = false;
+
+            facturaSeleccionada = null;
+
+            mostrarNuevaFactura = true;
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al cargar la factura para editar: {ex.Message}";
+        }
+    }
+
+
+    // =====================================================
+    // BUSCAR PRODUCTOS
+    // =====================================================
+
+    private void BuscarProductos(ChangeEventArgs e)
+    {
+        textoProducto =
+            e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(textoProducto))
+        {
+            productosBuscados.Clear();
+
+            return;
+        }
+
+        var texto =
+            textoProducto.Trim();
+
+        productosBuscados =
+            productos
+                .Where(p =>
+                    p.activo
+
+                    &&
+
+                    (
+                        (
+                            !string.IsNullOrWhiteSpace(
+                                p.nombre)
+
+                            &&
+
+                            p.nombre.Contains(
+                                texto,
+                                StringComparison.OrdinalIgnoreCase)
+                        )
+
+                        ||
+
+                        (
+                            !string.IsNullOrWhiteSpace(
+                                p.codigo_principal)
+
+                            &&
+
+                            p.codigo_principal.Contains(
+                                texto,
+                                StringComparison.OrdinalIgnoreCase)
+                        )
+                    )
+                )
+                .Take(10)
+                .ToList();
+    }
+
+
+    // =====================================================
+    // AGREGAR PRODUCTO
+    // =====================================================
+
+    private void AgregarProducto(Producto producto)
+    {
+        if (!producto.activo)
+            return;
+
+        if (producto.stock <= 0)
+        {
+            error =
+                $"El producto '{producto.nombre}' no tiene stock disponible.";
+
+            return;
+        }
+
+        var existente =
+            detalleFactura.FirstOrDefault(
+                d => d.id_producto ==
+                     producto.id_producto);
+
+        if (existente != null)
+        {
+            if (existente.cantidad >= producto.stock)
+            {
+                error =
+                    $"No hay más stock disponible de '{producto.nombre}'.";
+
+                return;
+            }
+
+            existente.cantidad++;
+
+            RecalcularDetalle(existente);
+        }
+        else
+        {
+            var detalle =
+                new FacturaDetalle
+                {
+                    id_producto =
+                        producto.id_producto,
+
+                    cantidad = 1,
+
+                    precio_unitario =
+                        producto.precio_unitario,
+
+                    descuento = 0
+                };
+
+            RecalcularDetalle(detalle);
+
+            detalleFactura.Add(detalle);
+        }
+
+        error = null;
+
+        textoProducto = string.Empty;
+
+        productosBuscados.Clear();
+    }
+
+
+    // =====================================================
+    // CAMBIAR CANTIDAD
+    // =====================================================
+
+    private void CambiarCantidad(
+        FacturaDetalle detalle,
+        ChangeEventArgs e)
+    {
+        if (int.TryParse(
+            e.Value?.ToString(),
+            out int cantidad))
+        {
+            var producto =
+                productos.FirstOrDefault(
+                    p => p.id_producto ==
+                         detalle.id_producto);
+
+            if (cantidad < 1)
+                cantidad = 1;
+
+            if (producto != null &&
+                cantidad > producto.stock)
+            {
+                cantidad = producto.stock;
+
+                error =
+                    $"La cantidad no puede superar el stock disponible de '{producto.nombre}'.";
+            }
+            else
+            {
+                error = null;
+            }
+
+            detalle.cantidad =
+                cantidad;
+
+            RecalcularDetalle(detalle);
+        }
+    }
+
+
+    // =====================================================
+    // RECALCULAR DETALLE
+    // =====================================================
+
+    private void RecalcularDetalle(
+        FacturaDetalle detalle)
+    {
+        var producto =
+            productos.FirstOrDefault(
+                p => p.id_producto ==
+                     detalle.id_producto);
+
+        decimal precio =
+            detalle.precio_unitario;
+
+        decimal descuento =
+            detalle.descuento ?? 0;
+
+        decimal subtotal =
+            (precio * detalle.cantidad) -
+            descuento;
+
+        if (subtotal < 0)
+            subtotal = 0;
+
+        decimal porcentajeIva =
+            producto?.tarifa_iva ?? 15;
+
+        decimal iva =
+            subtotal *
+            (porcentajeIva / 100m);
+
+        decimal total =
+            subtotal + iva;
+
+        detalle.subtotal =
+            subtotal;
+
+        detalle.valor_iva =
+            iva;
+
+        detalle.total =
+            total;
+    }
+
+
+    // =====================================================
+    // ELIMINAR PRODUCTO
+    // =====================================================
+
+    private void EliminarProducto(
+        FacturaDetalle detalle)
+    {
+        detalleFactura.Remove(detalle);
+
+        error = null;
+    }
+
+
+    // =====================================================
+    // NOMBRE PRODUCTO
+    // =====================================================
+
+    private string ObtenerNombreProducto(
+        int idProducto)
+    {
+        return productos
+                   .FirstOrDefault(
+                       p => p.id_producto ==
+                            idProducto)
+                   ?.nombre
+               ?? $"Producto #{idProducto}";
+    }
+
+
+    // =====================================================
+    // TOTALES
+    // =====================================================
+
+    private decimal Subtotal =>
+        detalleFactura.Sum(
+            x => x.subtotal);
+
+    private decimal IvaTotal =>
+        detalleFactura.Sum(
+            x => x.valor_iva);
+
+    private decimal TotalFactura =>
+        detalleFactura.Sum(
+            x => x.total);
+
+
+    // =====================================================
+    // GUARDAR FACTURA
+    // =====================================================
+
+    private async Task GuardarFactura()
+    {
+        if (modoEdicion)
+        {
+            await ActualizarFactura();
+        }
+        else
+        {
+            await CrearFactura();
+        }
+    }
+
+
+    // =====================================================
+    // CREAR FACTURA
+    // =====================================================
+
+    private async Task CrearFactura()
+    {
+        if (guardandoFactura)
+            return;
+
+        error = null;
+
+        if (idClienteSeleccionado <= 0)
+        {
+            error =
+                "Debe seleccionar un cliente.";
+
+            return;
+        }
+
+        if (detalleFactura.Count == 0)
+        {
+            error =
+                "Debe agregar al menos un producto.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(formaPago))
+        {
+            error =
+                "Debe seleccionar una forma de pago.";
+
+            return;
+        }
+
+        foreach (var detalle in detalleFactura)
+        {
+            var producto =
+                productos.FirstOrDefault(
+                    p => p.id_producto ==
+                         detalle.id_producto);
+
+            if (producto == null)
+            {
+                error =
+                    $"No se encontró el producto {detalle.id_producto}.";
+
+                return;
+            }
+
+            if (detalle.cantidad > producto.stock)
+            {
+                error =
+                    $"El producto '{producto.nombre}' no tiene suficiente stock.";
+
+                return;
+            }
+        }
+
+        guardandoFactura = true;
+
+        try
+        {
+            decimal subtotal =
+                detalleFactura.Sum(
+                    x => x.subtotal);
+
+            decimal iva =
+                detalleFactura.Sum(
+                    x => x.valor_iva);
+
+            decimal descuento =
+                detalleFactura.Sum(
+                    x => x.descuento ?? 0);
+
+            decimal total =
+                detalleFactura.Sum(
+                    x => x.total);
+
+
+            // ---------------------------------------------
+            // CABECERA
+            // ---------------------------------------------
+
+            var facturaNueva =
+                new Codesi.Factura.Aplicacion.Models.Factura
+                {
+                    id_cliente =
+                        idClienteSeleccionado,
+
+                    establecimiento =
+                        "001",
+
+                    punto_emision =
+                        "001",
+
+                    fecha_emision =
+                        DateTime.Now,
+
+                    subtotal_sin_impuestos =
+                        subtotal,
+
+                    total_descuento =
+                        descuento,
+
+                    subtotal_iva =
+                        iva,
+
+                    propina =
+                        0,
+
+                    importe_total =
+                        total,
+
+                    estado_sri =
+                        "CREADA",
+
+                    clave_acceso =
+                        Guid.NewGuid()
+                            .ToString("N")
+                };
+
+
+            // ---------------------------------------------
+            // GUARDAR CABECERA
+            // ---------------------------------------------
+
+            var facturaCreada =
+                await FacturaService
+                    .CrearFactura(facturaNueva);
+
+            if (facturaCreada == null)
+            {
+                throw new Exception(
+                    "La API no devolvió la factura creada.");
+            }
+
+            int idFactura =
+                facturaCreada.id_factura;
+
+            if (idFactura <= 0)
+            {
+                throw new Exception(
+                    "La factura fue creada pero no se recibió un ID válido.");
+            }
+
+
+            // ---------------------------------------------
+            // GUARDAR DETALLES
+            // ---------------------------------------------
+
+            foreach (var detalle in detalleFactura)
+            {
+                detalle.id_factura =
+                    idFactura;
+
+                var detalleCreado =
+                    await FacturaService
+                        .CrearDetalle(detalle);
+
+                if (detalleCreado == null)
+                {
+                    throw new Exception(
+                        $"No se pudo guardar el detalle del producto {detalle.id_producto}.");
+                }
+            }
+
+
+            // ---------------------------------------------
+            // GUARDAR PAGO
+            // ---------------------------------------------
+
+            var pago =
+                new FacturaPago
+                {
+                    id_factura =
+                        idFactura,
+
+                    forma_pago =
+                        formaPago,
+
+                    total =
+                        total
+                };
+
+            var pagoCreado =
+                await FacturaService
+                    .CrearPago(pago);
+
+            if (pagoCreado == null)
+            {
+                throw new Exception(
+                    "La factura se creó, pero no se pudo registrar el pago.");
+            }
+
+
+            // ---------------------------------------------
+            // LIMPIAR
+            // ---------------------------------------------
+
+            mostrarNuevaFactura =
+                false;
+
+            modoEdicion =
+                false;
+
+            idFacturaEditando =
+                0;
+
+            idClienteSeleccionado =
+                0;
+
+            textoProducto =
+                string.Empty;
+
+            formaPago =
+                string.Empty;
+
+            detalleFactura.Clear();
+
+            productosBuscados.Clear();
+
+
+            // ---------------------------------------------
+            // ACTUALIZAR LISTADO
+            // ---------------------------------------------
 
             await CargarFacturas();
         }
         catch (Exception ex)
         {
-            error = $"Error al actualizar el estado: {ex.Message}";
+            error =
+                $"Error al crear la factura: {ex.Message}";
+        }
+        finally
+        {
+            guardandoFactura =
+                false;
         }
     }
+
+
+    // =====================================================
+    // ACTUALIZAR FACTURA
+    // =====================================================
+
+    private async Task ActualizarFactura()
+    {
+        if (guardandoFactura)
+            return;
+
+        error = null;
+
+        // ---------------------------------------------
+        // VALIDACIONES
+        // ---------------------------------------------
+
+        if (idFacturaEditando <= 0)
+        {
+            error =
+                "No se identificó la factura que se desea editar.";
+
+            return;
+        }
+
+        if (idClienteSeleccionado <= 0)
+        {
+            error =
+                "Debe seleccionar un cliente.";
+
+            return;
+        }
+
+        if (detalleFactura.Count == 0)
+        {
+            error =
+                "Debe agregar al menos un producto.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(formaPago))
+        {
+            error =
+                "Debe seleccionar una forma de pago.";
+
+            return;
+        }
+
+
+        // ---------------------------------------------
+        // VERIFICAR STOCK
+        // ---------------------------------------------
+
+        foreach (var detalle in detalleFactura)
+        {
+            var producto =
+                productos.FirstOrDefault(
+                    p => p.id_producto ==
+                         detalle.id_producto);
+
+            if (producto == null)
+            {
+                error =
+                    $"No se encontró el producto {detalle.id_producto}.";
+
+                return;
+            }
+
+            if (!producto.activo)
+            {
+                error =
+                    $"El producto '{producto.nombre}' está inactivo.";
+
+                return;
+            }
+
+            if (detalle.cantidad > producto.stock)
+            {
+                error =
+                    $"El producto '{producto.nombre}' no tiene suficiente stock.";
+
+                return;
+            }
+        }
+
+
+        guardandoFactura = true;
+
+        try
+        {
+            // ---------------------------------------------
+            // RECALCULAR DETALLES
+            // ---------------------------------------------
+
+            foreach (var detalle in detalleFactura)
+            {
+                RecalcularDetalle(detalle);
+
+                detalle.id_factura =
+                    idFacturaEditando;
+            }
+
+
+            decimal subtotal =
+                detalleFactura.Sum(
+                    x => x.subtotal);
+
+            decimal iva =
+                detalleFactura.Sum(
+                    x => x.valor_iva);
+
+            decimal descuento =
+                detalleFactura.Sum(
+                    x => x.descuento ?? 0);
+
+            decimal total =
+                detalleFactura.Sum(
+                    x => x.total);
+
+
+            // ---------------------------------------------
+            // CREAR OBJETO PARA ACTUALIZAR
+            // ---------------------------------------------
+
+            var facturaActualizada =
+                new Codesi.Factura.Aplicacion.Models.Factura
+                {
+                    id_factura =
+                        idFacturaEditando,
+
+                    id_cliente =
+                        idClienteSeleccionado,
+
+                    fecha_emision =
+                        fechaFacturaEditando,
+
+                    subtotal_sin_impuestos =
+                        subtotal,
+
+                    total_descuento =
+                        descuento,
+
+                    subtotal_iva =
+                        iva,
+
+                    propina =
+                        0,
+
+                    importe_total =
+                        total,
+
+                    estado_sri =
+                        "CREADA"
+                };
+
+
+            // ---------------------------------------------
+            // ACTUALIZAR API
+            // ---------------------------------------------
+
+            await FacturaService
+                .ActualizarFactura(
+                    idFacturaEditando,
+                    facturaActualizada,
+                    detalleFactura,
+                    formaPago,
+                    total
+                );
+
+
+            // ---------------------------------------------
+            // LIMPIAR
+            // ---------------------------------------------
+
+            mostrarNuevaFactura =
+                false;
+
+            modoEdicion =
+                false;
+
+            idFacturaEditando =
+                0;
+
+            fechaFacturaEditando =
+                DateTime.Now;
+
+            idClienteSeleccionado =
+                0;
+
+            textoProducto =
+                string.Empty;
+
+            formaPago =
+                string.Empty;
+
+            detalleFactura.Clear();
+
+            productosBuscados.Clear();
+
+
+            // ---------------------------------------------
+            // ACTUALIZAR LISTADO
+            // ---------------------------------------------
+
+            await CargarFacturas();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al actualizar la factura: {ex.Message}";
+        }
+        finally
+        {
+            guardandoFactura =
+                false;
+        }
+    }
+
+
+    // =====================================================
+    // VER FACTURA
+    // =====================================================
+
+    private async Task VerFactura(int id)
+    {
+        try
+        {
+            error = null;
+
+            facturaSeleccionada =
+                await FacturaService
+                    .ObtenerFacturaPorId(id);
+
+            if (facturaSeleccionada == null)
+            {
+                error =
+                    "No se encontró la factura.";
+
+                return;
+            }
+
+            detalles =
+                await FacturaService
+                    .ObtenerDetalles(id);
+
+            pagos =
+                await FacturaService
+                    .ObtenerPagos(id);
+
+            mostrarDetalle =
+                true;
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al obtener la factura: {ex.Message}";
+        }
+    }
+
+
+    // =====================================================
+    // CERRAR DETALLE
+    // =====================================================
+
+    private void CerrarDetalle()
+    {
+        mostrarDetalle =
+            false;
+
+        facturaSeleccionada =
+            null;
+
+        detalles.Clear();
+
+        pagos.Clear();
+    }
+
+
+    // =====================================================
+    // AUTORIZAR
+    // =====================================================
+
+    private async Task AutorizarFactura(
+        int id)
+    {
+        try
+        {
+            error = null;
+
+            await FacturaService
+                .ActualizarEstado(
+                    id,
+                    "AUTORIZADA");
+
+            mostrarDetalle = false;
+
+            await CargarFacturas();
+        }
+        catch (Exception ex)
+        {
+            error =
+                $"Error al actualizar el estado: {ex.Message}";
+        }
+    }
+
+
+    // =====================================================
+    // ESTADO AUTORIZADA
+    // =====================================================
+
+    private bool EsAutorizada(
+        Codesi.Factura.Aplicacion.Models.Factura factura)
+    {
+        return string.Equals(
+            factura.estado_sri,
+            "AUTORIZADA",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    // =====================================================
+    // ESTADO EDITABLE
+    // =====================================================
+
+    private bool EsEditable(
+        Codesi.Factura.Aplicacion.Models.Factura factura)
+    {
+        return string.Equals(
+            factura.estado_sri,
+            "CREADA",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    // =====================================================
+    // INICIAL CLIENTE
+    // =====================================================
+
+    private string ObtenerInicialCliente(
+        int idCliente)
+    {
+        return idCliente
+            .ToString()
+            .FirstOrDefault()
+            .ToString();
+    }
+
+
+    // =====================================================
+    // RENDER ESTADO
+    // =====================================================
+
+    private RenderFragment RenderEstado(
+        string? estado)
+    {
+        var estadoNormalizado =
+            string.IsNullOrWhiteSpace(estado)
+                ? "PENDIENTE"
+                : estado.ToUpperInvariant();
+
+        var clase =
+            estadoNormalizado switch
+            {
+                "AUTORIZADA" =>
+                    "status-authorized",
+
+                "RECHAZADA" =>
+                    "status-rejected",
+
+                "PENDIENTE" =>
+                    "status-pending",
+
+                _ =>
+                    "status-other"
+            };
+
+        return builder =>
+        {
+            builder.OpenElement(
+                0,
+                "span");
+
+            builder.AddAttribute(
+                1,
+                "class",
+                $"status-badge {clase}");
+
+            builder.OpenElement(
+                2,
+                "span");
+
+            builder.AddAttribute(
+                3,
+                "class",
+                "status-dot");
+
+            builder.CloseElement();
+
+            builder.AddContent(
+                4,
+                estadoNormalizado);
+
+            builder.CloseElement();
+        };
+    }
+
 }
+

@@ -13,12 +13,13 @@ namespace Codesi.Factura.Api.Services
             _repository = repository;
         }
 
-        public List<factura_detalles> ObtenerPorFactura(
-            int idFactura)
+        // Obtener detalles de una factura
+        public List<factura_detalles> ObtenerPorFactura(int idFactura)
         {
             return _repository.ObtenerPorFactura(idFactura);
         }
 
+        // Crear detalle
         public void CrearDetalle(factura_detalles detalle)
         {
             _repository.InsertarDetalle(detalle);
