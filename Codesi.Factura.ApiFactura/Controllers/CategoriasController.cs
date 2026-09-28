@@ -1,5 +1,5 @@
 ﻿using Codesi.Factura.Api.Services;
-using Codesi.Factura.Persistencia.Models;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Codesi.Factura.Api.Controllers
@@ -26,7 +26,7 @@ namespace Codesi.Factura.Api.Controllers
 
         // POST: api/Categorias
         [HttpPost]
-        public IActionResult CrearCategoria([FromBody] categorias categoria)
+        public IActionResult CrearCategoria([FromBody] Categoria categoria)
         {
             _service.CrearCategoria(categoria);
 

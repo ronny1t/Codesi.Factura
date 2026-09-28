@@ -1,4 +1,4 @@
-﻿using Codesi.Factura.Persistencia.Models;
+﻿using Codesi.Factura.Persistencia.Models.Universidad;
 using Codesi.Factura.Persistencia.Repositories;
 
 namespace Codesi.Factura.Api.Services
@@ -12,27 +12,27 @@ namespace Codesi.Factura.Api.Services
             _repository = repository;
         }
 
-        public List<clientes> ObtenerClientes()
+        public List<Cliente> ObtenerClientes()
         {
             return _repository.ObtenerClientes();
         }
 
-        public clientes? ObtenerClientePorId(int id)
+        public Cliente? ObtenerClientePorId(int id)
         {
             return _repository.ObtenerClientePorId(id);
         }
 
-        public clientes? ObtenerPorIdentificacion(string identificacion)
+        public Cliente? ObtenerPorIdentificacion(string identificacion)
         {
             return _repository.ObtenerPorIdentificacion(identificacion);
         }
 
-        public void CrearCliente(clientes cliente)
+        public void CrearCliente(Cliente cliente)
         {
             _repository.InsertarCliente(cliente);
         }
 
-        public void ActualizarCliente(clientes cliente)
+        public void ActualizarCliente(Cliente cliente)
         {
             _repository.ActualizarCliente(cliente);
         }

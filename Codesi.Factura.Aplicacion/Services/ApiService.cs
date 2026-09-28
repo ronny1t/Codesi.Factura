@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Codesi.Factura.Aplicacion.Services
 {
@@ -27,30 +28,50 @@ namespace Codesi.Factura.Aplicacion.Services
         }
 
         // POST
-        public async Task<T?> PostAsync<T>(
+        public async Task<TResponse?> PostAsync<TRequest, TResponse>(
             string endpoint,
-            T objeto)
+            TRequest objeto)
         {
+            // DEBUG: ver exactamente qué JSON sale desde Blazor
+            var json = JsonSerializer.Serialize(objeto);
+
+            Console.WriteLine("====================================");
+            Console.WriteLine($"POST: {endpoint}");
+            Console.WriteLine($"JSON ENVIADO: {json}");
+            Console.WriteLine("====================================");
+
             var response =
                 await _http.PostAsJsonAsync(
                     endpoint,
                     objeto
                 );
 
+            var contenido =
+                await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine("====================================");
+            Console.WriteLine($"STATUS: {(int)response.StatusCode}");
+            Console.WriteLine($"RESPUESTA API: {contenido}");
+            Console.WriteLine("====================================");
+
             if (!response.IsSuccessStatusCode)
             {
-                var mensaje =
-                    await response.Content.ReadAsStringAsync();
-
                 throw new Exception(
                     $"Error HTTP {(int)response.StatusCode} " +
                     $"({response.StatusCode}) en {endpoint}: " +
-                    mensaje
+                    contenido
                 );
             }
 
-            return await response.Content
-                .ReadFromJsonAsync<T>();
+            if (string.IsNullOrWhiteSpace(contenido))
+                return default;
+
+            return JsonSerializer.Deserialize<TResponse>(
+                contenido,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
         }
 
         // PUT

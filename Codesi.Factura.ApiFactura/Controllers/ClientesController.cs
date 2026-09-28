@@ -1,5 +1,5 @@
 ﻿using Codesi.Factura.Api.Services;
-using Codesi.Factura.Persistencia.Models;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Codesi.Factura.Api.Controllers
@@ -56,8 +56,16 @@ namespace Codesi.Factura.Api.Controllers
 
         // POST: api/Clientes
         [HttpPost]
-        public IActionResult CrearCliente([FromBody] clientes cliente)
+        public IActionResult CrearCliente([FromBody] Cliente cliente)
         {
+            Console.WriteLine("========== CREAR CLIENTE ==========");
+            Console.WriteLine($"Tipo identificación: '{cliente.TipoIdentificacion}'");
+            Console.WriteLine($"Identificación: '{cliente.Identificacion}'");
+            Console.WriteLine($"Razón social: '{cliente.RazonSocial}'");
+            Console.WriteLine($"Dirección: '{cliente.Direccion}'");
+            Console.WriteLine($"Teléfono: '{cliente.Telefono}'");
+            Console.WriteLine($"Email: '{cliente.Email}'");
+
             _service.CrearCliente(cliente);
 
             return Ok(cliente);
@@ -67,9 +75,9 @@ namespace Codesi.Factura.Api.Controllers
         [HttpPut("{id}")]
         public IActionResult ActualizarCliente(
             int id,
-            [FromBody] clientes cliente)
+            [FromBody] Cliente cliente)
         {
-            cliente.id_cliente = id;
+            cliente.IdCliente = id;
 
             _service.ActualizarCliente(cliente);
 

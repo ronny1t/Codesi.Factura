@@ -1,42 +1,43 @@
-﻿using Codesi.Factura.Persistencia.Models;
+﻿using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.EntityFrameworkCore;
 
 namespace Codesi.Factura.Persistencia.Repositories
 {
     public class FacturaRepository
     {
-        private readonly licoreriaContext _context;
+        private readonly FacturacionUniversidadContext _context;
 
-        public FacturaRepository(licoreriaContext context)
+        public FacturaRepository(FacturacionUniversidadContext context)
         {
             _context = context;
         }
 
         // Obtener todas las facturas
-        public List<facturas> ObtenerFacturas()
+        public List<Codesi.Factura.Persistencia.Models.Universidad.Factura> ObtenerFacturas()
         {
-            return _context.facturas
+            return _context.Facturas
                 .AsNoTracking()
                 .ToList();
         }
 
         // Obtener factura por ID
-        public facturas? ObtenerFacturaPorId(int id)
+        public Codesi.Factura.Persistencia.Models.Universidad.Factura? ObtenerFacturaPorId(int id)
         {
-            return _context.facturas
+            return _context.Facturas
                 .AsNoTracking()
-                .FirstOrDefault(f => f.id_factura == id);
+                .FirstOrDefault(f => f.IdFactura == id);
         }
 
         // Insertar factura
-        public void InsertarFactura(facturas factura)
+        public void InsertarFactura(
+            Codesi.Factura.Persistencia.Models.Universidad.Factura factura)
         {
-            var ultimoSecuencial = _context.facturas
+            var ultimoSecuencial = _context.Facturas
                 .Where(f =>
-                    f.establecimiento == factura.establecimiento &&
-                    f.punto_emision == factura.punto_emision)
-                .OrderByDescending(f => f.id_factura)
-                .Select(f => f.secuencial)
+                    f.Establecimiento == factura.Establecimiento &&
+                    f.PuntoEmision == factura.PuntoEmision)
+                .OrderByDescending(f => f.IdFactura)
+                .Select(f => f.Secuencial)
                 .FirstOrDefault();
 
             int siguiente = 1;
@@ -47,14 +48,14 @@ namespace Codesi.Factura.Persistencia.Repositories
                 siguiente = numero + 1;
             }
 
-            factura.secuencial = siguiente.ToString("D9");
+            factura.Secuencial = siguiente.ToString("D9");
 
-            if (string.IsNullOrWhiteSpace(factura.clave_acceso))
+            if (string.IsNullOrWhiteSpace(factura.ClaveAcceso))
             {
-                factura.clave_acceso = Guid.NewGuid().ToString("N");
+                factura.ClaveAcceso = Guid.NewGuid().ToString("N");
             }
 
-            _context.facturas.Add(factura);
+            _context.Facturas.Add(factura);
 
             _context.SaveChanges();
         }
@@ -62,29 +63,30 @@ namespace Codesi.Factura.Persistencia.Repositories
         // Actualizar estado SRI
         public void ActualizarEstadoSri(int id, string estado)
         {
-            var factura = _context.facturas
-                .FirstOrDefault(f => f.id_factura == id);
+            var factura = _context.Facturas
+                .FirstOrDefault(f => f.IdFactura == id);
 
             if (factura != null)
             {
-                factura.estado_sri = estado;
+                factura.EstadoSri = estado;
                 _context.SaveChanges();
             }
         }
-        //Actualizar factura
+
+        // Actualizar factura
         public void ActualizarFactura(
-    int id,
-    facturas factura,
-    List<factura_detalles> detalles,
-    List<factura_pagos> pagos)
+            int id,
+            Codesi.Factura.Persistencia.Models.Universidad.Factura factura,
+            List<FacturaDetalle> detalles,
+            List<FacturaPago> pagos)
         {
             using var transaction =
                 _context.Database.BeginTransaction();
 
             try
             {
-                var facturaExistente = _context.facturas
-                    .FirstOrDefault(f => f.id_factura == id);
+                var facturaExistente = _context.Facturas
+                    .FirstOrDefault(f => f.IdFactura == id);
 
                 if (facturaExistente == null)
                 {
@@ -94,7 +96,7 @@ namespace Codesi.Factura.Persistencia.Repositories
                 }
 
                 if (!string.Equals(
-                        facturaExistente.estado_sri,
+                        facturaExistente.EstadoSri,
                         "CREADA",
                         StringComparison.OrdinalIgnoreCase))
                 {
@@ -104,43 +106,43 @@ namespace Codesi.Factura.Persistencia.Repositories
                 }
 
                 // Actualizar cabecera
-                facturaExistente.id_cliente =
-                    factura.id_cliente;
+                facturaExistente.IdCliente =
+                    factura.IdCliente;
 
-                facturaExistente.fecha_emision =
-                    factura.fecha_emision;
+                facturaExistente.FechaEmision =
+                    factura.FechaEmision;
 
-                facturaExistente.subtotal_sin_impuestos =
-                    factura.subtotal_sin_impuestos;
+                facturaExistente.SubtotalSinImpuestos =
+                    factura.SubtotalSinImpuestos;
 
-                facturaExistente.total_descuento =
-                    factura.total_descuento;
+                facturaExistente.TotalDescuento =
+                    factura.TotalDescuento;
 
-                facturaExistente.subtotal_iva =
-                    factura.subtotal_iva;
+                facturaExistente.SubtotalIva =
+                    factura.SubtotalIva;
 
-                facturaExistente.propina =
-                    factura.propina;
+                facturaExistente.Propina =
+                    factura.Propina;
 
-                facturaExistente.importe_total =
-                    factura.importe_total;
+                facturaExistente.ImporteTotal =
+                    factura.ImporteTotal;
 
                 // Obtener detalles actuales
                 var detallesActuales =
-                    _context.factura_detalles
-                        .Where(d => d.id_factura == id)
+                    _context.FacturaDetalles
+                        .Where(d => d.IdFactura == id)
                         .ToList();
 
-                _context.factura_detalles
+                _context.FacturaDetalles
                     .RemoveRange(detallesActuales);
 
                 // Obtener pagos actuales
                 var pagosActuales =
-                    _context.factura_pagos
-                        .Where(p => p.id_factura == id)
+                    _context.FacturaPagos
+                        .Where(p => p.IdFactura == id)
                         .ToList();
 
-                _context.factura_pagos
+                _context.FacturaPagos
                     .RemoveRange(pagosActuales);
 
                 _context.SaveChanges();
@@ -148,14 +150,14 @@ namespace Codesi.Factura.Persistencia.Repositories
                 // Agregar nuevos detalles
                 if (detalles.Count > 0)
                 {
-                    _context.factura_detalles
+                    _context.FacturaDetalles
                         .AddRange(detalles);
                 }
 
                 // Agregar nuevos pagos
                 if (pagos.Count > 0)
                 {
-                    _context.factura_pagos
+                    _context.FacturaPagos
                         .AddRange(pagos);
                 }
 

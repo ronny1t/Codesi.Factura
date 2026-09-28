@@ -35,10 +35,10 @@ namespace Codesi.Factura.Aplicacion.Services
         public async Task<Producto?> CrearProducto(
             Producto producto)
         {
-            return await _api.PostAsync(
-                "api/Productos",
-                producto
-            );
+            return await _api.PostAsync<Producto, Producto>(
+     "api/Productos",
+     producto
+ );
         }
 
         public async Task<Producto?> ActualizarProducto(

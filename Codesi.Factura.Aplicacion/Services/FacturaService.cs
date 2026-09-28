@@ -31,9 +31,36 @@ namespace Codesi.Factura.Aplicacion.Services
         public async Task<Codesi.Factura.Aplicacion.Models.Factura?> CrearFactura(
             Codesi.Factura.Aplicacion.Models.Factura factura)
         {
-            return await _api.PostAsync<Codesi.Factura.Aplicacion.Models.Factura>(
+            var request = new
+            {
+                establecimiento = factura.establecimiento,
+                punto_emision = factura.punto_emision,
+                secuencial = factura.secuencial,
+                clave_acceso = factura.clave_acceso,
+                fecha_emision = factura.fecha_emision,
+
+                id_cliente = factura.id_cliente,
+
+                subtotal_sin_impuestos = factura.subtotal_sin_impuestos,
+                total_descuento = factura.total_descuento ?? 0,
+                subtotal_iva = factura.subtotal_iva,
+                propina = factura.propina ?? 0,
+                importe_total = factura.importe_total,
+                estado_sri = factura.estado_sri
+            };
+
+            Console.WriteLine("====================================");
+            Console.WriteLine("CREANDO FACTURA DESDE FACTURASERVICE");
+            Console.WriteLine($"id_cliente: {request.id_cliente}");
+            Console.WriteLine($"importe_total: {request.importe_total}");
+            Console.WriteLine("====================================");
+
+            return await _api.PostAsync<
+                object,
+                Codesi.Factura.Aplicacion.Models.Factura
+            >(
                 "api/Facturas",
-                factura
+                request
             );
         }
         // Actualizar factura completa
@@ -91,7 +118,10 @@ namespace Codesi.Factura.Aplicacion.Services
         // Crear detalle
         public async Task<FacturaDetalle?> CrearDetalle(FacturaDetalle detalle)
         {
-            return await _api.PostAsync<FacturaDetalle>(
+            return await _api.PostAsync<
+                FacturaDetalle,
+                FacturaDetalle
+            >(
                 "api/FacturaDetalles",
                 detalle
             );
@@ -108,7 +138,10 @@ namespace Codesi.Factura.Aplicacion.Services
         // Crear pago
         public async Task<FacturaPago?> CrearPago(FacturaPago pago)
         {
-            return await _api.PostAsync<FacturaPago>(
+            return await _api.PostAsync<
+                FacturaPago,
+                FacturaPago
+            >(
                 "api/FacturaPagos",
                 pago
             );

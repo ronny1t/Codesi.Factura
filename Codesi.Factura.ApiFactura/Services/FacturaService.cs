@@ -1,5 +1,5 @@
 ﻿using Codesi.Factura.Api.Models;
-using Codesi.Factura.Persistencia.Models;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Codesi.Factura.Persistencia.Repositories;
 
 namespace Codesi.Factura.Api.Services
@@ -13,17 +13,18 @@ namespace Codesi.Factura.Api.Services
             _repository = repository;
         }
 
-        public List<facturas> ObtenerFacturas()
+        public List<Codesi.Factura.Persistencia.Models.Universidad.Factura> ObtenerFacturas()
         {
             return _repository.ObtenerFacturas();
         }
 
-        public facturas? ObtenerFacturaPorId(int id)
+        public Codesi.Factura.Persistencia.Models.Universidad.Factura? ObtenerFacturaPorId(int id)
         {
             return _repository.ObtenerFacturaPorId(id);
         }
 
-        public void CrearFactura(facturas factura)
+        public void CrearFactura(
+            Codesi.Factura.Persistencia.Models.Universidad.Factura factura)
         {
             _repository.InsertarFactura(factura);
         }
@@ -37,50 +38,52 @@ namespace Codesi.Factura.Api.Services
             int id,
             FacturaActualizarRequest request)
         {
-            var factura = new facturas
-            {
-                id_factura = id,
-                id_cliente = request.id_cliente,
-                fecha_emision = request.fecha_emision,
-                subtotal_sin_impuestos =
-                    request.subtotal_sin_impuestos,
-                total_descuento =
-                    request.total_descuento,
-                subtotal_iva =
-                    request.subtotal_iva,
-                propina =
-                    request.propina,
-                importe_total =
-                    request.importe_total
-            };
+            var factura =
+                new Codesi.Factura.Persistencia.Models.Universidad.Factura
+                {
+                    IdFactura = id,
+                    IdCliente = request.id_cliente,
+                    FechaEmision = request.fecha_emision,
+                    SubtotalSinImpuestos =
+                        request.subtotal_sin_impuestos,
+                    TotalDescuento =
+                        request.total_descuento ?? 0,
+                    SubtotalIva =
+                        request.subtotal_iva,
+                    Propina =
+                        request.propina ?? 0,
+                    ImporteTotal =
+                        request.importe_total
+                };
 
             var detalles =
-                request.detalles
-                    .Select(d => new factura_detalles
-                    {
-                        id_factura = id,
-                        id_producto = d.id_producto,
-                        cantidad = d.cantidad,
-                        precio_unitario =
-                            d.precio_unitario,
-                        descuento = d.descuento,
-                        subtotal = d.subtotal,
-                        valor_iva = d.valor_iva,
-                        total = d.total
-                    })
-                    .ToList();
+     request.detalles
+         .Select(d =>
+             new FacturaDetalle
+             {
+                 IdFactura = id,
+                 IdProducto = d.IdProducto,
+                 Cantidad = d.Cantidad,
+                 PrecioUnitario = d.PrecioUnitario,
+                 Descuento = d.Descuento ?? 0,
+                 Subtotal = d.Subtotal,
+                 ValorIva = d.ValorIva,
+                 Total = d.Total
+             })
+         .ToList();
 
-            var pagos = new List<factura_pagos>();
+            var pagos = new List<FacturaPago>();
 
             if (!string.IsNullOrWhiteSpace(
                     request.forma_pago))
             {
-                pagos.Add(new factura_pagos
-                {
-                    id_factura = id,
-                    forma_pago = request.forma_pago,
-                    total = request.total_pago
-                });
+                pagos.Add(
+                    new FacturaPago
+                    {
+                        IdFactura = id,
+                        FormaPago = request.forma_pago,
+                        Total = request.total_pago
+                    });
             }
 
             _repository.ActualizarFactura(

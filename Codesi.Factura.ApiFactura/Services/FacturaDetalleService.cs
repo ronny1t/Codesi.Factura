@@ -1,4 +1,4 @@
-﻿using Codesi.Factura.Persistencia.Models;
+﻿using Codesi.Factura.Persistencia.Models.Universidad;
 using Codesi.Factura.Persistencia.Repositories;
 
 namespace Codesi.Factura.Api.Services
@@ -14,13 +14,13 @@ namespace Codesi.Factura.Api.Services
         }
 
         // Obtener detalles de una factura
-        public List<factura_detalles> ObtenerPorFactura(int idFactura)
+        public List<FacturaDetalle> ObtenerPorFactura(int idFactura)
         {
             return _repository.ObtenerPorFactura(idFactura);
         }
 
         // Crear detalle
-        public void CrearDetalle(factura_detalles detalle)
+        public void CrearDetalle(FacturaDetalle detalle)
         {
             _repository.InsertarDetalle(detalle);
         }

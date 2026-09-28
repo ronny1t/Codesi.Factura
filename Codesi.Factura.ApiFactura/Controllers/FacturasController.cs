@@ -1,5 +1,5 @@
 ﻿using Codesi.Factura.Api.Services;
-using Codesi.Factura.Persistencia.Models;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.AspNetCore.Mvc;
 using Codesi.Factura.Api.Models;
 
@@ -40,13 +40,62 @@ namespace Codesi.Factura.Api.Controllers
 
         // POST: api/Facturas
         [HttpPost]
-        public IActionResult CrearFactura([FromBody] facturas factura)
+        public IActionResult CrearFactura(
+     [FromBody] FacturaCrearRequest request)
         {
+            Console.WriteLine("====================================");
+            Console.WriteLine("POST api/Facturas");
+            Console.WriteLine($"IdCliente recibido: {request.id_cliente}");
+            Console.WriteLine($"Fecha: {request.fecha_emision}");
+            Console.WriteLine($"Total: {request.importe_total}");
+            Console.WriteLine("====================================");
+
+            if (request.id_cliente <= 0)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El id_cliente recibido es 0 o inválido.",
+                    id_cliente = request.id_cliente
+                });
+            }
+
+            var factura =
+                new Codesi.Factura.Persistencia.Models.Universidad.Factura
+                {
+                    Establecimiento = request.establecimiento,
+                    PuntoEmision = request.punto_emision,
+                    Secuencial = request.secuencial,
+                    ClaveAcceso = request.clave_acceso,
+                    FechaEmision = request.fecha_emision,
+
+                    IdCliente = request.id_cliente,
+
+                    SubtotalSinImpuestos =
+                        request.subtotal_sin_impuestos,
+
+                    TotalDescuento =
+                        request.total_descuento,
+
+                    SubtotalIva =
+                        request.subtotal_iva,
+
+                    Propina =
+                        request.propina,
+
+                    ImporteTotal =
+                        request.importe_total,
+
+                    EstadoSri =
+                        request.estado_sri
+                };
+
+            Console.WriteLine(
+                $"IdCliente de factura: {factura.IdCliente}");
+
             _service.CrearFactura(factura);
 
             return Ok(factura);
         }
-
         // PUT: api/Facturas/5/estado/AUTORIZADA
         [HttpPut("{id}/estado/{estado}")]
         public IActionResult ActualizarEstado(
@@ -86,7 +135,7 @@ namespace Codesi.Factura.Api.Controllers
                 }
 
                 if (!string.Equals(
-                        factura.estado_sri,
+                        factura.EstadoSri,
                         "CREADA",
                         StringComparison.OrdinalIgnoreCase))
                 {

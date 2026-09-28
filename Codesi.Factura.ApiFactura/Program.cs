@@ -1,4 +1,4 @@
-using Codesi.Factura.Persistencia.Models;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Codesi.Factura.Persistencia.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Codesi.Factura.Api.Services;
@@ -12,7 +12,7 @@ namespace Codesi.Factura.ApiFactura
             var builder = WebApplication.CreateBuilder(args);
 
             // Conexión con SQL Server
-            builder.Services.AddDbContext<licoreriaContext>(options =>
+            builder.Services.AddDbContext<FacturacionUniversidadContext>(options =>
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("DefaultConnection")
                 ));
@@ -63,7 +63,6 @@ namespace Codesi.Factura.ApiFactura
 
             // CORS
             app.UseCors("FlutterPolicy");
-
 
             app.UseAuthorization();
 

@@ -29,7 +29,10 @@ public class ClienteApiService
 
     public async Task<clientes?> CrearClienteAsync(clientes cliente)
     {
-        return await _api.PostAsync<clientes>("api/Clientes", cliente);
+        return await _api.PostAsync<clientes, clientes>(
+            "api/Clientes",
+            cliente
+        );
     }
 
     public async Task ActualizarClienteAsync(int id, clientes cliente)

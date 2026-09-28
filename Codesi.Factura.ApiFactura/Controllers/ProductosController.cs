@@ -1,5 +1,5 @@
 ﻿using Codesi.Factura.Api.Services;
-using Codesi.Factura.Persistencia.Models;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Codesi.Factura.Api.Controllers
@@ -47,7 +47,8 @@ namespace Codesi.Factura.Api.Controllers
 
         // POST: api/Productos
         [HttpPost]
-        public IActionResult CrearProducto([FromBody] productos producto)
+        public IActionResult CrearProducto(
+            [FromBody] Producto producto)
         {
             _service.CrearProducto(producto);
 
@@ -58,9 +59,9 @@ namespace Codesi.Factura.Api.Controllers
         [HttpPut("{id}")]
         public IActionResult ActualizarProducto(
             int id,
-            [FromBody] productos producto)
+            [FromBody] Producto producto)
         {
-            producto.id_producto = id;
+            producto.IdProducto = id;
 
             _service.ActualizarProducto(producto);
 

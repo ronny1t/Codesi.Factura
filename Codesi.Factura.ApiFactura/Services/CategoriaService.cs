@@ -1,4 +1,4 @@
-﻿using Codesi.Factura.Persistencia.Models;
+﻿using Codesi.Factura.Persistencia.Models.Universidad;
 using Codesi.Factura.Persistencia.Repositories;
 
 namespace Codesi.Factura.Api.Services
@@ -12,12 +12,12 @@ namespace Codesi.Factura.Api.Services
             _repository = repository;
         }
 
-        public List<categorias> ObtenerCategorias()
+        public List<Categoria> ObtenerCategorias()
         {
             return _repository.ObtenerCategorias();
         }
 
-        public void CrearCategoria(categorias categoria)
+        public void CrearCategoria(Categoria categoria)
         {
             _repository.InsertarCategoria(categoria);
         }

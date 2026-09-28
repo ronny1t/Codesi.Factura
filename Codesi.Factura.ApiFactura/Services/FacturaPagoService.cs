@@ -1,4 +1,4 @@
-﻿using Codesi.Factura.Persistencia.Models;
+﻿using Codesi.Factura.Persistencia.Models.Universidad;
 using Codesi.Factura.Persistencia.Repositories;
 
 namespace Codesi.Factura.Api.Services
@@ -13,13 +13,13 @@ namespace Codesi.Factura.Api.Services
             _repository = repository;
         }
 
-        public List<factura_pagos> ObtenerPorFactura(
+        public List<FacturaPago> ObtenerPorFactura(
             int idFactura)
         {
             return _repository.ObtenerPorFactura(idFactura);
         }
 
-        public void CrearPago(factura_pagos pago)
+        public void CrearPago(FacturaPago pago)
         {
             _repository.InsertarPago(pago);
         }

@@ -30,7 +30,6 @@
                 @onclick="NuevoCliente">
 
             <span>＋</span>
-
             <span>Nuevo cliente</span>
 
         </button>
@@ -54,7 +53,9 @@
 
                     <span>Total clientes</span>
 
-                    <strong>@todosLosClientes.Count</strong>
+                    <strong>
+                        @todosLosClientes.Count
+                    </strong>
 
                 </div>
 
@@ -76,7 +77,9 @@
 
                     <span>Resultados</span>
 
-                    <strong>@clientes.Count</strong>
+                    <strong>
+                        @clientes.Count
+                    </strong>
 
                 </div>
 
@@ -118,11 +121,15 @@
         <div class="search-title">
 
             <div>
-                <h5>Buscar clientes</h5>
+
+                <h5>
+                    Buscar clientes
+                </h5>
 
                 <span>
                     Busca por identificación, nombre, teléfono o correo
                 </span>
+
             </div>
 
             <span class="search-title-icon">
@@ -171,7 +178,9 @@
 
             <div class="spinner"></div>
 
-            <h5>Cargando clientes...</h5>
+            <h5>
+                Cargando clientes...
+            </h5>
 
             <p>
                 Estamos obteniendo la información de los clientes.
@@ -179,13 +188,15 @@
 
         </div>
     }
-    else if (!string.IsNullOrEmpty(error))
+    else if (!string.IsNullOrEmpty(error) && !mostrarFormulario)
     {
         <div class="alert custom-alert">
 
             <span>⚠</span>
 
-            <span>@error</span>
+            <span>
+                @error
+            </span>
 
         </div>
     }
@@ -197,11 +208,15 @@
             <div class="clients-card-header">
 
                 <div>
-                    <h5>Lista de clientes</h5>
+
+                    <h5>
+                        Lista de clientes
+                    </h5>
 
                     <span>
                         @clientes.Count cliente(s) encontrado(s)
                     </span>
+
                 </div>
 
                 <div class="table-info">
@@ -312,8 +327,10 @@
                                         <div class="client-name">
 
                                             <div class="client-avatar">
+
                                                 @ObtenerIniciales(
                                                     cliente.razon_social)
+
                                             </div>
 
                                             <div>
@@ -337,10 +354,12 @@
                                     <td>
 
                                         <span class="address-text">
+
                                             @(string.IsNullOrWhiteSpace(
                                                 cliente.direccion)
                                                 ? "Sin dirección"
                                                 : cliente.direccion)
+
                                         </span>
 
                                     </td>
@@ -350,10 +369,12 @@
                                     <td>
 
                                         <span class="phone-text">
+
                                             @(string.IsNullOrWhiteSpace(
                                                 cliente.telefono)
                                                 ? "Sin teléfono"
                                                 : cliente.telefono)
+
                                         </span>
 
                                     </td>
@@ -412,7 +433,10 @@
 </div>
 
 
+<!-- ========================================= -->
 <!-- MODAL CLIENTE -->
+<!-- ========================================= -->
+
 @if (mostrarFormulario)
 {
     <div class="modal-backdrop-custom"></div>
@@ -436,15 +460,19 @@
                         <div>
 
                             <h5>
+
                                 @(clienteEditando
                                     ? "Editar cliente"
                                     : "Nuevo cliente")
+
                             </h5>
 
                             <span>
+
                                 @(clienteEditando
                                     ? "Actualiza la información del cliente"
                                     : "Registra un nuevo cliente")
+
                             </span>
 
                         </div>
@@ -468,7 +496,11 @@
 
                     <div class="row g-3">
 
+
+                        <!-- ================================= -->
                         <!-- TIPO IDENTIFICACIÓN -->
+                        <!-- ================================= -->
+
                         <div class="col-md-6">
 
                             <label>
@@ -476,13 +508,14 @@
                             </label>
 
                             <select class="form-select"
-                                    @bind="clienteForm.tipo_identificacion">
+                                    @bind="clienteForm.tipo_identificacion"
+                                    @bind:after="TipoIdentificacionCambiado">
 
                                 <option value="">
                                     Seleccione
                                 </option>
 
-                                <option value="Cédula">
+                                <option value="CEDULA">
                                     Cédula
                                 </option>
 
@@ -490,8 +523,12 @@
                                     RUC
                                 </option>
 
-                                <option value="Pasaporte">
+                                <option value="PASAPORTE">
                                     Pasaporte
+                                </option>
+
+                                <option value="CONSUMIDOR_FINAL">
+                                    Consumidor Final
                                 </option>
 
                             </select>
@@ -499,35 +536,116 @@
                         </div>
 
 
+                        <!-- ================================= -->
                         <!-- IDENTIFICACIÓN -->
+                        <!-- ================================= -->
+
                         <div class="col-md-6">
 
                             <label>
                                 Identificación
                             </label>
 
-                            <input class="form-control"
-                                   placeholder="Ej: 0102030405"
-                                   @bind="clienteForm.identificacion" />
+                            <input class="form-control @(TieneErrorIdentificacion() ? "input-error" : "")"
+                                   placeholder="@PlaceholderIdentificacion()"
+                                   maxlength="@MaximoIdentificacion()"
+                                   inputmode="@(EsTipoNumerico() ? "numeric" : "text")"
+                                   @bind="clienteForm.identificacion"
+                                   @bind:event="oninput"
+                                    />
+
+                            @if (clienteForm.tipo_identificacion == "CEDULA")
+                            {
+                                <small class="campo-ayuda">
+                                    @clienteForm.identificacion.Length / 10 dígitos
+                                </small>
+
+                                @if (clienteForm.identificacion.Length > 0 &&
+                                     clienteForm.identificacion.Length < 10)
+                                {
+                                    <div class="campo-warning">
+                                        ⚠ La cédula debe tener 10 dígitos.
+                                    </div>
+                                }
+                            }
+
+                            @if (clienteForm.tipo_identificacion == "RUC")
+                            {
+                                <small class="campo-ayuda">
+                                    @clienteForm.identificacion.Length / 13 dígitos
+                                </small>
+
+                                @if (clienteForm.identificacion.Length > 0 &&
+                                     clienteForm.identificacion.Length < 13)
+                                {
+                                    <div class="campo-warning">
+                                        ⚠ El RUC debe tener 13 dígitos.
+                                    </div>
+                                }
+                            }
+
+                            @if (clienteForm.tipo_identificacion == "PASAPORTE")
+                            {
+                                <small class="campo-ayuda">
+                                    @clienteForm.identificacion.Length / 20 caracteres
+                                </small>
+
+                                @if (clienteForm.identificacion.Length > 0 &&
+                                     clienteForm.identificacion.Length < 6)
+                                {
+                                    <div class="campo-warning">
+                                        ⚠ El pasaporte debe tener al menos 6 caracteres.
+                                    </div>
+                                }
+                            }
+
+                            @if (clienteForm.tipo_identificacion == "CONSUMIDOR_FINAL")
+                            {
+                                <small class="campo-ayuda">
+                                    Máximo 13 dígitos
+                                </small>
+                            }
+
+                            @if (TieneCaracteresInvalidosIdentificacion())
+                            {
+                                <div class="campo-error">
+                                    ⚠ La identificación contiene caracteres no permitidos.
+                                </div>
+                            }
 
                         </div>
 
 
+                        <!-- ================================= -->
                         <!-- RAZÓN SOCIAL -->
+                        <!-- ================================= -->
+
                         <div class="col-12">
 
                             <label>
                                 Nombre / Razón social
                             </label>
 
-                            <input class="form-control"
+                            <input class="form-control @(string.IsNullOrWhiteSpace(clienteForm.razon_social) ? "" : "")"
                                    placeholder="Nombre completo o razón social"
-                                   @bind="clienteForm.razon_social" />
+                                   maxlength="150"
+                                   @bind="clienteForm.razon_social"
+                                   @bind:event="oninput" />
+
+                            @if (string.IsNullOrWhiteSpace(clienteForm.razon_social))
+                            {
+                                <small class="campo-ayuda">
+                                    Este campo es obligatorio.
+                                </small>
+                            }
 
                         </div>
 
 
+                        <!-- ================================= -->
                         <!-- DIRECCIÓN -->
+                        <!-- ================================= -->
+
                         <div class="col-12">
 
                             <label>
@@ -536,26 +654,64 @@
 
                             <input class="form-control"
                                    placeholder="Dirección del cliente"
-                                   @bind="clienteForm.direccion" />
+                                   maxlength="200"
+                                   @bind="clienteForm.direccion"
+                                   @bind:event="oninput" />
 
                         </div>
 
 
+                        <!-- ================================= -->
                         <!-- TELÉFONO -->
+                        <!-- ================================= -->
+
                         <div class="col-md-6">
 
                             <label>
                                 Teléfono
                             </label>
 
-                            <input class="form-control"
+                            <input class="form-control @(TieneErrorTelefono() ? "input-error" : "")"
                                    placeholder="Ej: 0991234567"
-                                   @bind="clienteForm.telefono" />
+                                   maxlength="10"
+                                   inputmode="numeric"
+                                   @bind="clienteForm.telefono"
+                                   @bind:event="oninput"
+                                   />
+
+                            @if (string.IsNullOrWhiteSpace(clienteForm.telefono))
+                            {
+                                <small class="campo-ayuda">
+                                    Opcional. Máximo 10 dígitos.
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="campo-ayuda">
+                                    @clienteForm.telefono.Length / 10 dígitos
+                                </small>
+
+                                @if (clienteForm.telefono.Length < 10)
+                                {
+                                    <div class="campo-warning">
+                                        ⚠ El teléfono debe tener 10 dígitos.
+                                    </div>
+                                }
+                                else if (!clienteForm.telefono.StartsWith("09"))
+                                {
+                                    <div class="campo-error">
+                                        ⚠ El celular debe comenzar con 09.
+                                    </div>
+                                }
+                            }
 
                         </div>
 
 
+                        <!-- ================================= -->
                         <!-- EMAIL -->
+                        <!-- ================================= -->
+
                         <div class="col-md-6">
 
                             <label>
@@ -563,11 +719,55 @@
                             </label>
 
                             <input type="email"
-                                   class="form-control"
+                                   class="form-control @(TieneErrorEmail() ? "input-error" : "")"
                                    placeholder="cliente@correo.com"
-                                   @bind="clienteForm.email" />
+                                   maxlength="150"
+                                   @bind="clienteForm.email"
+                                   @bind:event="oninput"
+                                    />
+
+                            @if (string.IsNullOrWhiteSpace(clienteForm.email))
+                            {
+                                <small class="campo-ayuda">
+                                    Opcional.
+                                </small>
+                            }
+                            else if (TieneErrorEmail())
+                            {
+                                <div class="campo-error">
+                                    ⚠ Ingrese un correo electrónico válido.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="campo-success">
+                                    ✓ Correo válido.
+                                </div>
+                            }
 
                         </div>
+
+
+                        <!-- ================================= -->
+                        <!-- ERROR GENERAL DEL FORMULARIO -->
+                        <!-- ================================= -->
+
+                        @if (!string.IsNullOrWhiteSpace(error))
+                        {
+                            <div class="col-12">
+
+                                <div class="formulario-error">
+
+                                    <span>⚠</span>
+
+                                    <span>
+                                        @error
+                                    </span>
+
+                                </div>
+
+                            </div>
+                        }
 
                     </div>
 
@@ -584,7 +784,9 @@
 
                     </button>
 
+
                     <button class="btn btn-modal-save"
+                            disabled="@FormularioTieneErrores()"
                             @onclick="GuardarCliente">
 
                         @(clienteEditando
@@ -660,13 +862,15 @@
         align-items: center;
     }
 
-        .btn-new-client:hover {
-            background: #1d4ed8;
-            color: white;
-        }
+    .btn-new-client:hover {
+        background: #1d4ed8;
+        color: white;
+    }
 
 
+    /* ============================= */
     /* ESTADÍSTICAS */
+    /* ============================= */
 
     .stat-card {
         background: white;
@@ -706,18 +910,20 @@
         flex-direction: column;
     }
 
-        .stat-info span {
-            color: #7b8495;
-            font-size: 14px;
-        }
+    .stat-info span {
+        color: #7b8495;
+        font-size: 14px;
+    }
 
-        .stat-info strong {
-            font-size: 25px;
-            color: #172033;
-        }
+    .stat-info strong {
+        font-size: 25px;
+        color: #172033;
+    }
 
 
+    /* ============================= */
     /* BUSCADOR */
+    /* ============================= */
 
     .search-card {
         background: white;
@@ -734,16 +940,16 @@
         margin-bottom: 15px;
     }
 
-        .search-title h5 {
-            margin: 0;
-            font-weight: 700;
-            color: #172033;
-        }
+    .search-title h5 {
+        margin: 0;
+        font-weight: 700;
+        color: #172033;
+    }
 
-        .search-title span {
-            color: #7b8495;
-            font-size: 13px;
-        }
+    .search-title span {
+        color: #7b8495;
+        font-size: 13px;
+    }
 
     .search-title-icon {
         font-size: 22px;
@@ -759,12 +965,12 @@
         position: relative;
     }
 
-        .search-input input {
-            height: 45px;
-            border-radius: 10px;
-            padding-left: 42px;
-            border: 1px solid #dce1ea;
-        }
+    .search-input input {
+        height: 45px;
+        border-radius: 10px;
+        padding-left: 42px;
+        border: 1px solid #dce1ea;
+    }
 
     .search-icon {
         position: absolute;
@@ -782,7 +988,9 @@
     }
 
 
+    /* ============================= */
     /* TABLA */
+    /* ============================= */
 
     .clients-card {
         background: white;
@@ -799,15 +1007,15 @@
         border-bottom: 1px solid #edf0f5;
     }
 
-        .clients-card-header h5 {
-            margin: 0;
-            font-weight: 700;
-        }
+    .clients-card-header h5 {
+        margin: 0;
+        font-weight: 700;
+    }
 
-        .clients-card-header span {
-            color: #7b8495;
-            font-size: 13px;
-        }
+    .clients-card-header span {
+        color: #7b8495;
+        font-size: 13px;
+    }
 
     .table-info {
         padding: 8px 12px;
@@ -821,22 +1029,22 @@
         vertical-align: middle;
     }
 
-        .clients-table thead {
-            background: #f8fafc;
-        }
+    .clients-table thead {
+        background: #f8fafc;
+    }
 
-        .clients-table th {
-            padding: 14px 16px;
-            font-size: 11px;
-            color: #7b8495;
-            border: none;
-            white-space: nowrap;
-        }
+    .clients-table th {
+        padding: 14px 16px;
+        font-size: 11px;
+        color: #7b8495;
+        border: none;
+        white-space: nowrap;
+    }
 
-        .clients-table td {
-            padding: 15px 16px;
-            border-color: #edf0f5;
-        }
+    .clients-table td {
+        padding: 15px 16px;
+        border-color: #edf0f5;
+    }
 
     .client-id {
         font-weight: 700;
@@ -848,15 +1056,15 @@
         flex-direction: column;
     }
 
-        .identification strong {
-            color: #172033;
-        }
+    .identification strong {
+        color: #172033;
+    }
 
-        .identification small {
-            color: #8b94a5;
-            font-size: 11px;
-            margin-top: 2px;
-        }
+    .identification small {
+        color: #8b94a5;
+        font-size: 11px;
+        margin-top: 2px;
+    }
 
     .client-name {
         display: flex;
@@ -904,7 +1112,9 @@
     }
 
 
+    /* ============================= */
     /* ACCIONES */
+    /* ============================= */
 
     .action-buttons {
         display: flex;
@@ -928,13 +1138,15 @@
         color: #2563eb;
     }
 
-        .edit-btn:hover {
-            background: #2563eb;
-            color: white;
-        }
+    .edit-btn:hover {
+        background: #2563eb;
+        color: white;
+    }
 
 
+    /* ============================= */
     /* LOADING */
+    /* ============================= */
 
     .loading-card {
         background: white;
@@ -943,13 +1155,13 @@
         text-align: center;
     }
 
-        .loading-card h5 {
-            margin-top: 15px;
-        }
+    .loading-card h5 {
+        margin-top: 15px;
+    }
 
-        .loading-card p {
-            color: #7b8495;
-        }
+    .loading-card p {
+        color: #7b8495;
+    }
 
     .spinner {
         width: 35px;
@@ -970,10 +1182,13 @@
         to {
             transform: rotate(360deg);
         }
+
     }
 
 
+    /* ============================= */
     /* ALERTA */
+    /* ============================= */
 
     .custom-alert {
         display: flex;
@@ -987,7 +1202,9 @@
     }
 
 
+    /* ============================= */
     /* VACÍO */
+    /* ============================= */
 
     .empty-state {
         padding: 55px 20px;
@@ -1009,7 +1226,9 @@
     }
 
 
+    /* ============================= */
     /* MODAL */
+    /* ============================= */
 
     .modal-backdrop-custom {
         position: fixed;
@@ -1022,11 +1241,11 @@
         z-index: 1050;
     }
 
-        .client-modal .modal-content {
-            border: none;
-            border-radius: 16px;
-            overflow: hidden;
-        }
+    .client-modal .modal-content {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+    }
 
     .modal-header-custom {
         padding: 20px;
@@ -1075,20 +1294,81 @@
         padding: 25px;
     }
 
-        .modal-body-custom label {
-            display: block;
-            margin-bottom: 7px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #374151;
-        }
+    .modal-body-custom label {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+    }
 
-        .modal-body-custom .form-control,
-        .modal-body-custom .form-select {
-            border-radius: 9px;
-            border: 1px solid #dce1ea;
-            padding: 10px 12px;
-        }
+    .modal-body-custom .form-control,
+    .modal-body-custom .form-select {
+        border-radius: 9px;
+        border: 1px solid #dce1ea;
+        padding: 10px 12px;
+    }
+
+    .modal-body-custom .form-control:focus,
+    .modal-body-custom .form-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 .15rem rgba(37,99,235,.10);
+    }
+
+
+    /* ============================= */
+    /* VALIDACIONES DEL FORMULARIO */
+    /* ============================= */
+
+    .campo-ayuda {
+        display: block;
+        margin-top: 5px;
+        color: #7b8495;
+        font-size: 11px;
+    }
+
+    .campo-warning {
+        margin-top: 5px;
+        color: #b45309;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .campo-error {
+        margin-top: 5px;
+        color: #dc2626;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .campo-success {
+        margin-top: 5px;
+        color: #16a34a;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .input-error {
+        border-color: #dc2626 !important;
+        background: #fff7f7;
+    }
+
+    .formulario-error {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff1f2;
+        color: #be123c;
+        border: 1px solid #fecdd3;
+        border-radius: 9px;
+        padding: 11px 13px;
+        font-size: 13px;
+    }
+
+
+    /* ============================= */
+    /* FOOTER MODAL */
+    /* ============================= */
 
     .modal-footer-custom {
         padding: 16px 25px;
@@ -1114,13 +1394,21 @@
         font-weight: 600;
     }
 
-        .btn-modal-save:hover {
-            background: #1d4ed8;
-            color: white;
-        }
+    .btn-modal-save:hover {
+        background: #1d4ed8;
+        color: white;
+    }
+
+    .btn-modal-save:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        opacity: .7;
+    }
 
 
+    /* ============================= */
     /* RESPONSIVE */
+    /* ============================= */
 
     @@media (max-width: 900px) {
 
@@ -1138,6 +1426,7 @@
             width: 100%;
             justify-content: center;
         }
+
     }
 
 </style>
@@ -1164,6 +1453,10 @@
     }
 
 
+    // =========================================
+    // CARGAR CLIENTES
+    // =========================================
+
     private async Task CargarClientes()
     {
         try
@@ -1188,6 +1481,10 @@
         }
     }
 
+
+    // =========================================
+    // BUSCAR
+    // =========================================
 
     private void BuscarMientrasEscribe(ChangeEventArgs e)
     {
@@ -1247,19 +1544,31 @@
     }
 
 
+    // =========================================
+    // NUEVO CLIENTE
+    // =========================================
+
     private void NuevoCliente()
     {
         clienteEditando = false;
 
         clienteForm = new clientes();
 
+        error = string.Empty;
+
         mostrarFormulario = true;
     }
 
 
+    // =========================================
+    // EDITAR CLIENTE
+    // =========================================
+
     private void EditarCliente(clientes cliente)
     {
         clienteEditando = true;
+
+        error = string.Empty;
 
         clienteForm = new clientes
         {
@@ -1276,11 +1585,302 @@
     }
 
 
+    // =========================================
+    // CERRAR FORMULARIO
+    // =========================================
+
     private void CerrarFormulario()
     {
         mostrarFormulario = false;
+
+        error = string.Empty;
     }
 
+
+    // =========================================
+    // TIPO IDENTIFICACIÓN CAMBIÓ
+    // =========================================
+
+    private void TipoIdentificacionCambiado()
+    {
+        error = string.Empty;
+
+        // Limpiar identificación al cambiar de tipo
+        // para evitar conservar un formato incompatible.
+        clienteForm.identificacion = string.Empty;
+    }
+
+
+    // =========================================
+    // MÁXIMO DE IDENTIFICACIÓN
+    // =========================================
+
+    private int MaximoIdentificacion()
+    {
+        return clienteForm.tipo_identificacion switch
+        {
+            "CEDULA" => 10,
+
+            "RUC" => 13,
+
+            "PASAPORTE" => 20,
+
+            "CONSUMIDOR_FINAL" => 13,
+
+            _ => 20
+        };
+    }
+
+
+    // =========================================
+    // PLACEHOLDER
+    // =========================================
+
+    private string PlaceholderIdentificacion()
+    {
+        return clienteForm.tipo_identificacion switch
+        {
+            "CEDULA" =>
+                "Ej: 0102030405",
+
+            "RUC" =>
+                "Ej: 0102030405001",
+
+            "PASAPORTE" =>
+                "Ej: ABC123456",
+
+            "CONSUMIDOR_FINAL" =>
+                "Ej: 9999999999999",
+
+            _ =>
+                "Ingrese la identificación"
+        };
+    }
+
+
+    // =========================================
+    // TIPO NUMÉRICO
+    // =========================================
+
+    private bool EsTipoNumerico()
+    {
+        return clienteForm.tipo_identificacion == "CEDULA"
+            || clienteForm.tipo_identificacion == "RUC"
+            || clienteForm.tipo_identificacion == "CONSUMIDOR_FINAL";
+    }
+
+
+    // =========================================
+    // VALIDACIÓN EN TIEMPO REAL
+    // =========================================
+
+    private void ValidarFormularioEnTiempoReal(
+        ChangeEventArgs e)
+    {
+        error = string.Empty;
+
+        // CEDULA / RUC / CONSUMIDOR FINAL
+        if (EsTipoNumerico())
+        {
+            var valor =
+                clienteForm.identificacion ?? string.Empty;
+
+            clienteForm.identificacion =
+                new string(
+                    valor.Where(char.IsDigit).ToArray());
+        }
+
+        // TELÉFONO
+        if (!string.IsNullOrWhiteSpace(
+            clienteForm.telefono))
+        {
+            clienteForm.telefono =
+                new string(
+                    clienteForm.telefono
+                        .Where(char.IsDigit)
+                        .ToArray());
+        }
+    }
+
+
+    // =========================================
+    // CARACTERES INVÁLIDOS IDENTIFICACIÓN
+    // =========================================
+
+    private bool TieneCaracteresInvalidosIdentificacion()
+    {
+        if (string.IsNullOrWhiteSpace(
+            clienteForm.identificacion))
+        {
+            return false;
+        }
+
+        if (EsTipoNumerico())
+        {
+            return !clienteForm.identificacion
+                .All(char.IsDigit);
+        }
+
+        if (clienteForm.tipo_identificacion ==
+            "PASAPORTE")
+        {
+            return !clienteForm.identificacion
+                .All(char.IsLetterOrDigit);
+        }
+
+        return false;
+    }
+
+
+    // =========================================
+    // ERROR IDENTIFICACIÓN
+    // =========================================
+
+    private bool TieneErrorIdentificacion()
+    {
+        if (string.IsNullOrWhiteSpace(
+            clienteForm.tipo_identificacion))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+            clienteForm.identificacion))
+        {
+            return true;
+        }
+
+        if (TieneCaracteresInvalidosIdentificacion())
+        {
+            return true;
+        }
+
+        return clienteForm.tipo_identificacion switch
+        {
+            "CEDULA" =>
+                clienteForm.identificacion.Length != 10,
+
+            "RUC" =>
+                clienteForm.identificacion.Length != 13,
+
+            "PASAPORTE" =>
+                clienteForm.identificacion.Length < 6 ||
+                clienteForm.identificacion.Length > 20,
+
+            "CONSUMIDOR_FINAL" =>
+                clienteForm.identificacion.Length != 13,
+
+            _ => true
+        };
+    }
+
+
+    // =========================================
+    // ERROR TELÉFONO
+    // =========================================
+
+    private bool TieneErrorTelefono()
+    {
+        if (string.IsNullOrWhiteSpace(
+            clienteForm.telefono))
+        {
+            return false;
+        }
+
+        if (!clienteForm.telefono.All(char.IsDigit))
+        {
+            return true;
+        }
+
+        if (clienteForm.telefono.Length != 10)
+        {
+            return true;
+        }
+
+        if (!clienteForm.telefono.StartsWith("09"))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    // =========================================
+    // ERROR EMAIL
+    // =========================================
+
+    private bool TieneErrorEmail()
+    {
+        if (string.IsNullOrWhiteSpace(
+            clienteForm.email))
+        {
+            return false;
+        }
+
+        return !EsCorreoValido(
+            clienteForm.email);
+    }
+
+
+    private bool EsCorreoValido(string correo)
+    {
+        try
+        {
+            var mail =
+                new System.Net.Mail.MailAddress(
+                    correo.Trim());
+
+            return mail.Address ==
+                   correo.Trim();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+
+    // =========================================
+    // ¿FORMULARIO TIENE ERRORES?
+    // =========================================
+
+    private bool FormularioTieneErrores()
+    {
+        if (string.IsNullOrWhiteSpace(
+            clienteForm.tipo_identificacion))
+        {
+            return true;
+        }
+
+        if (TieneErrorIdentificacion())
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+            clienteForm.razon_social))
+        {
+            return true;
+        }
+
+        if (TieneErrorTelefono())
+        {
+            return true;
+        }
+
+        if (TieneErrorEmail())
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    // =========================================
+    // GUARDAR CLIENTE
+    // =========================================
 
     private async Task GuardarCliente()
     {
@@ -1288,31 +1888,46 @@
         {
             error = string.Empty;
 
-            if (string.IsNullOrWhiteSpace(
-                clienteForm.identificacion))
+            // Validación final antes de enviar
+            if (FormularioTieneErrores())
             {
                 error =
-                    "Ingrese la identificación del cliente.";
-
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(
-                clienteForm.razon_social))
-            {
-                error =
-                    "Ingrese el nombre o razón social.";
+                    "Revise los campos marcados antes de guardar.";
 
                 return;
             }
 
 
+            // Limpiar espacios
+            clienteForm.identificacion =
+                clienteForm.identificacion.Trim();
+
+            clienteForm.razon_social =
+                clienteForm.razon_social.Trim();
+
+            if (!string.IsNullOrWhiteSpace(
+                clienteForm.telefono))
+            {
+                clienteForm.telefono =
+                    clienteForm.telefono.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(
+                clienteForm.email))
+            {
+                clienteForm.email =
+                    clienteForm.email.Trim();
+            }
+
+
+            // EDITAR
             if (clienteEditando)
             {
                 await ClienteApiService.ActualizarClienteAsync(
                     clienteForm.id_cliente,
                     clienteForm);
             }
+            // NUEVO
             else
             {
                 await ClienteApiService.CrearClienteAsync(
@@ -1332,6 +1947,10 @@
     }
 
 
+    // =========================================
+    // INICIALES
+    // =========================================
+
     private string ObtenerIniciales(string nombre)
     {
         if (string.IsNullOrWhiteSpace(nombre))
@@ -1345,11 +1964,15 @@
                     StringSplitOptions.RemoveEmptyEntries);
 
         if (palabras.Length == 1)
+        {
             return palabras[0]
                 .Substring(
                     0,
-                    Math.Min(2, palabras[0].Length))
+                    Math.Min(
+                        2,
+                        palabras[0].Length))
                 .ToUpper();
+        }
 
         return (
             palabras[0][0].ToString() +

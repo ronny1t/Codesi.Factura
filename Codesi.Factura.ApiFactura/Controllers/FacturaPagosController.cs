@@ -1,5 +1,6 @@
-﻿using Codesi.Factura.Api.Services;
-using Codesi.Factura.Persistencia.Models;
+﻿using Codesi.Factura.Api.Models;
+using Codesi.Factura.Api.Services;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Codesi.Factura.Api.Controllers
@@ -28,11 +29,29 @@ namespace Codesi.Factura.Api.Controllers
         // POST: api/FacturaPagos
         [HttpPost]
         public IActionResult CrearPago(
-            [FromBody] factura_pagos pago)
+            [FromBody] FacturaPagoRequest request)
         {
-            _service.CrearPago(pago);
+            var pago = new FacturaPago
+            {
+                IdFactura = request.IdFactura,
+                FormaPago = request.FormaPago,
+                Total = request.Total
+            };
 
-            return Ok(pago);
+            try
+            {
+                _service.CrearPago(pago);
+
+                return Ok(pago);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    mensaje = ex.Message,
+                    inner = ex.InnerException?.Message
+                });
+            }
         }
     }
 }

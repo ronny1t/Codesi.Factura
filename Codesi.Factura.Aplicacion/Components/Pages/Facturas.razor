@@ -2691,6 +2691,25 @@
             // GUARDAR CABECERA
             // ---------------------------------------------
 
+            Console.WriteLine("====================================");
+            Console.WriteLine("ENVIANDO FACTURA DESDE BLAZOR");
+            Console.WriteLine(
+                $"idClienteSeleccionado: {idClienteSeleccionado}");
+            Console.WriteLine(
+                $"facturaNueva.id_cliente: {facturaNueva.id_cliente}");
+            Console.WriteLine(
+                $"Clientes cargados: {clientes.Count}");
+
+            foreach (var cliente in clientes)
+            {
+                Console.WriteLine(
+                    $"Cliente -> ID: {cliente.id_cliente}, " +
+                    $"Identificación: {cliente.identificacion}, " +
+                    $"Nombre: {cliente.razon_social}");
+            }
+
+            Console.WriteLine("====================================");
+
             var facturaCreada =
                 await FacturaService
                     .CrearFactura(facturaNueva);

@@ -1,21 +1,31 @@
-﻿namespace Codesi.Factura.Api.Models
+﻿using System.Text.Json.Serialization;
+
+namespace Codesi.Factura.Api.Models
 {
     public class FacturaDetalleRequest
     {
-        public int id_factura { get; set; }
+        [JsonPropertyName("idFactura")]
+        public int IdFactura { get; set; }
 
-        public int id_producto { get; set; }
+        [JsonPropertyName("idProducto")]
+        public int IdProducto { get; set; }
 
-        public int cantidad { get; set; }
+        [JsonPropertyName("cantidad")]
+        public int Cantidad { get; set; }
 
-        public decimal precio_unitario { get; set; }
+        [JsonPropertyName("precioUnitario")]
+        public decimal PrecioUnitario { get; set; }
 
-        public decimal? descuento { get; set; }
+        [JsonPropertyName("descuento")]
+        public decimal? Descuento { get; set; }
 
-        public decimal subtotal { get; set; }
+        [JsonPropertyName("subtotal")]
+        public decimal Subtotal { get; set; }
 
-        public decimal valor_iva { get; set; }
+        [JsonPropertyName("valorIva")]
+        public decimal ValorIva { get; set; }
 
-        public decimal total { get; set; }
+        [JsonPropertyName("total")]
+        public decimal Total { get; set; }
     }
 }

@@ -1,30 +1,30 @@
-﻿using Codesi.Factura.Persistencia.Models;
+﻿using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.EntityFrameworkCore;
 
 namespace Codesi.Factura.Persistencia.Repositories
 {
     public class FacturaDetalleRepository
     {
-        private readonly licoreriaContext _context;
+        private readonly FacturacionUniversidadContext _context;
 
-        public FacturaDetalleRepository(licoreriaContext context)
+        public FacturaDetalleRepository(FacturacionUniversidadContext context)
         {
             _context = context;
         }
 
         // Obtener detalles de una factura
-        public List<factura_detalles> ObtenerPorFactura(int idFactura)
+        public List<FacturaDetalle> ObtenerPorFactura(int idFactura)
         {
-            return _context.factura_detalles
+            return _context.FacturaDetalles
                 .AsNoTracking()
-                .Where(d => d.id_factura == idFactura)
+                .Where(d => d.IdFactura == idFactura)
                 .ToList();
         }
 
         // Insertar detalle
-        public void InsertarDetalle(factura_detalles detalle)
+        public void InsertarDetalle(FacturaDetalle detalle)
         {
-            _context.factura_detalles.Add(detalle);
+            _context.FacturaDetalles.Add(detalle);
             _context.SaveChanges();
         }
     }

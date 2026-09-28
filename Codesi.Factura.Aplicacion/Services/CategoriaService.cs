@@ -19,9 +19,9 @@ namespace Codesi.Factura.Aplicacion.Services
         }
 
         public async Task<CategoriaModel?> CrearCategoriaAsync(
-            CategoriaModel categoria)
+    CategoriaModel categoria)
         {
-            return await _api.PostAsync<CategoriaModel>(
+            return await _api.PostAsync<CategoriaModel, CategoriaModel>(
                 "api/Categorias",
                 categoria
             );

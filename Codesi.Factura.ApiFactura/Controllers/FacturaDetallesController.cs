@@ -1,6 +1,6 @@
 ﻿using Codesi.Factura.Api.Models;
 using Codesi.Factura.Api.Services;
-using Codesi.Factura.Persistencia.Models;
+using Codesi.Factura.Persistencia.Models.Universidad;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Codesi.Factura.Api.Controllers
@@ -27,23 +27,25 @@ namespace Codesi.Factura.Api.Controllers
 
         [HttpPost]
         public IActionResult CrearDetalle(
-            [FromBody] FacturaDetalleRequest request)
+     [FromBody] FacturaDetalleRequest request)
         {
+            
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var detalle = new factura_detalles
+            var detalle = new FacturaDetalle
             {
-                id_factura = request.id_factura,
-                id_producto = request.id_producto,
-                cantidad = request.cantidad,
-                precio_unitario = request.precio_unitario,
-                descuento = request.descuento,
-                subtotal = request.subtotal,
-                valor_iva = request.valor_iva,
-                total = request.total
+                IdFactura = request.IdFactura,
+                IdProducto = request.IdProducto,
+                Cantidad = request.Cantidad,
+                PrecioUnitario = request.PrecioUnitario,
+                Descuento = request.Descuento ?? 0,
+                Subtotal = request.Subtotal,
+                ValorIva = request.ValorIva,
+                Total = request.Total
             };
 
             try
@@ -61,5 +63,6 @@ namespace Codesi.Factura.Api.Controllers
                 });
             }
         }
+
     }
 }
