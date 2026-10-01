@@ -12,7 +12,10 @@ namespace Codesi.Factura.Persistencia.Repositories
             _context = context;
         }
 
-        // Obtener todos los clientes
+        // ============================================================
+        // OBTENER TODOS LOS CLIENTES
+        // ============================================================
+
         public List<Cliente> ObtenerClientes()
         {
             return _context.Clientes
@@ -20,7 +23,10 @@ namespace Codesi.Factura.Persistencia.Repositories
                 .ToList();
         }
 
-        // Obtener cliente por ID
+        // ============================================================
+        // OBTENER CLIENTE POR ID
+        // ============================================================
+
         public Cliente? ObtenerClientePorId(int id)
         {
             return _context.Clientes
@@ -28,25 +34,96 @@ namespace Codesi.Factura.Persistencia.Repositories
                 .FirstOrDefault(c => c.IdCliente == id);
         }
 
-        // Buscar por identificación
-        public Cliente? ObtenerPorIdentificacion(string identificacion)
+        // ============================================================
+        // BUSCAR POR IDENTIFICACIÓN
+        // ============================================================
+
+        public Cliente? ObtenerPorIdentificacion(
+            string identificacion)
         {
             return _context.Clientes
                 .AsNoTracking()
-                .FirstOrDefault(c => c.Identificacion == identificacion);
+                .FirstOrDefault(
+                    c => c.Identificacion == identificacion
+                );
         }
 
-        // Insertar cliente
+        // ============================================================
+        // INSERTAR CLIENTE
+        // ============================================================
+
         public void InsertarCliente(Cliente cliente)
         {
+            // Si no viene una fecha de creación válida,
+            // asignamos la fecha actual.
+            if (cliente.FechaCreacion < new DateTime(1753, 1, 1))
+            {
+                cliente.FechaCreacion = DateTime.Now;
+            }
+
             _context.Clientes.Add(cliente);
+
             _context.SaveChanges();
         }
 
-        // Actualizar cliente
+        // ============================================================
+        // ACTUALIZAR CLIENTE
+        // ============================================================
+
         public void ActualizarCliente(Cliente cliente)
         {
-            _context.Clientes.Update(cliente);
+            // Buscar el registro ORIGINAL en la base de datos.
+            var clienteExistente = _context.Clientes
+                .FirstOrDefault(
+                    c => c.IdCliente == cliente.IdCliente
+                );
+
+            if (clienteExistente == null)
+            {
+                throw new Exception(
+                    "El cliente que intenta actualizar no existe."
+                );
+            }
+
+            // ========================================================
+            // ACTUALIZAR SOLO LOS CAMPOS EDITABLES
+            // ========================================================
+
+            clienteExistente.TipoIdentificacion =
+                cliente.TipoIdentificacion;
+
+            clienteExistente.Identificacion =
+                cliente.Identificacion;
+
+            clienteExistente.RazonSocial =
+                cliente.RazonSocial;
+
+            clienteExistente.Direccion =
+                cliente.Direccion;
+
+            clienteExistente.Telefono =
+                cliente.Telefono;
+
+            clienteExistente.Email =
+                cliente.Email;
+
+            clienteExistente.Activo =
+                cliente.Activo;
+
+            // ========================================================
+            // IMPORTANTE
+            // ========================================================
+            //
+            // NO hacemos:
+            //
+            // clienteExistente.FechaCreacion =
+            //     cliente.FechaCreacion;
+            //
+            // La fecha original que está en SQL Server
+            // debe conservarse.
+            //
+            // ========================================================
+
             _context.SaveChanges();
         }
     }

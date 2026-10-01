@@ -1,11 +1,13 @@
 ﻿using Codesi.Factura.Api.Services;
 using Codesi.Factura.Persistencia.Models.Universidad;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Codesi.Factura.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CategoriasController : ControllerBase
     {
         private readonly CategoriaService _service;
@@ -16,6 +18,7 @@ namespace Codesi.Factura.Api.Controllers
         }
 
         // GET: api/Categorias
+        // Administrador, Facturación, Bodega y Consulta pueden consultar
         [HttpGet]
         public IActionResult ObtenerCategorias()
         {
@@ -25,8 +28,11 @@ namespace Codesi.Factura.Api.Controllers
         }
 
         // POST: api/Categorias
+        // Solo Administrador
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
-        public IActionResult CrearCategoria([FromBody] Categoria categoria)
+        public IActionResult CrearCategoria(
+            [FromBody] Categoria categoria)
         {
             _service.CrearCategoria(categoria);
 
@@ -34,6 +40,8 @@ namespace Codesi.Factura.Api.Controllers
         }
 
         // PUT: api/Categorias/5/desactivar
+        // Solo Administrador
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}/desactivar")]
         public IActionResult DesactivarCategoria(int id)
         {
@@ -46,6 +54,8 @@ namespace Codesi.Factura.Api.Controllers
         }
 
         // PUT: api/Categorias/5/activar
+        // Solo Administrador
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}/activar")]
         public IActionResult ActivarCategoria(int id)
         {
@@ -55,6 +65,21 @@ namespace Codesi.Factura.Api.Controllers
             {
                 mensaje = "Categoría activada correctamente"
             });
+        }
+
+        // PUT: api/Categorias/5
+        // Solo Administrador
+        [Authorize(Roles = "Administrador")]
+        [HttpPut("{id}")]
+        public IActionResult ActualizarCategoria(
+            int id,
+            [FromBody] Categoria categoria)
+        {
+            categoria.IdCategoria = id;
+
+            _service.ActualizarCategoria(categoria);
+
+            return Ok(categoria);
         }
     }
 }

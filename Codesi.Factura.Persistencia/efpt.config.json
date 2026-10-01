@@ -3,43 +3,31 @@
    "ContextClassName": "licoreriaContext",
    "ContextNamespace": null,
    "FilterSchemas": false,
-   "IncludeConnectionString": true,
+   "IncludeConnectionString": false,
    "IrregularWords": null,
    "MinimumProductVersion": "2.6.1604",
    "ModelNamespace": null,
    "OutputContextPath": null,
-   "OutputPath": "Models",
+   "OutputPath": "Models\/Universidad",
    "PluralRules": null,
    "PreserveCasingWithRegex": true,
-   "ProjectRootNamespace": "Codesi.Factura.Persistencia",
+   "ProjectRootNamespace": "Codesi.Factura.Persistencia.Models.Universidad",
    "Schemas": null,
    "SelectedHandlebarsLanguage": 2,
-   "SelectedToBeGenerated": 0,
+   "SelectedToBeGenerated": 2,
    "SingularRules": null,
    "T4TemplatePath": null,
    "Tables": [
       {
-         "Name": "[dbo].[categorias]",
+         "Name": "[dbo].[Roles]",
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[clientes]",
+         "Name": "[dbo].[UsuarioRoles]",
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[factura_detalles]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[factura_pagos]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[facturas]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[productos]",
+         "Name": "[dbo].[Usuarios]",
          "ObjectType": 0
       }
    ],

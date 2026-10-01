@@ -1,12 +1,14 @@
 ﻿using Codesi.Factura.Api.Models;
 using Codesi.Factura.Api.Services;
 using Codesi.Factura.Persistencia.Models.Universidad;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Codesi.Factura.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class FacturaDetallesController : ControllerBase
     {
         private readonly FacturaDetalleService _service;
@@ -17,6 +19,8 @@ namespace Codesi.Factura.Api.Controllers
             _service = service;
         }
 
+        // GET: api/FacturaDetalles/factura/5
+        // Todos los usuarios autenticados pueden consultar
         [HttpGet("factura/{idFactura}")]
         public IActionResult ObtenerPorFactura(int idFactura)
         {
@@ -25,12 +29,13 @@ namespace Codesi.Factura.Api.Controllers
             );
         }
 
+        // POST: api/FacturaDetalles
+        // Administrador y Facturación pueden crear detalles
+        [Authorize(Roles = "Administrador,Facturacion")]
         [HttpPost]
         public IActionResult CrearDetalle(
-     [FromBody] FacturaDetalleRequest request)
+            [FromBody] FacturaDetalleRequest request)
         {
-            
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -63,6 +68,5 @@ namespace Codesi.Factura.Api.Controllers
                 });
             }
         }
-
     }
 }

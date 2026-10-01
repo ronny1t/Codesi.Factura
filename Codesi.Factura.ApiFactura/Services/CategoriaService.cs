@@ -22,6 +22,11 @@ namespace Codesi.Factura.Api.Services
             _repository.InsertarCategoria(categoria);
         }
 
+        public void ActualizarCategoria(Categoria categoria)
+        {
+            _repository.ActualizarCategoria(categoria);
+        }
+
         public void DesactivarCategoria(int id)
         {
             _repository.DesactivarCategoria(id);
